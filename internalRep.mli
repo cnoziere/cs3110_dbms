@@ -4,11 +4,11 @@
  *)
 
 (**
- * database is a reference to a tree that stores:
+ * database is a tree that stores:
  *   t_key: tree keys are table names, of type [string]
  *   t_value: tree values are of type [table]
  *)
-type database = table tree ref
+type database = {tables: (table_name: string, table) list; updated : t Ivar.t}
 
 (**
  * table is a reference to a tree that stores:
@@ -25,12 +25,13 @@ type table = column tree ref
  *)
 type column = key tree ref
 
-(**
- * result signals whether a database operation was successful or failed.
- * Failures contain an error message
- * Successes contain the value resulting from the operation
- *)
-type 'a result = Success of 'a | Failure of string
+(* update creates a new database with an empty Ivar and fills the
+updated field of the current database with the new database *)
+val update : database -> unit
+
+(* returns a deferred that becomes determined once the database
+has been modified *)
+val updated : database -> 'a Deferred.t
 
 (**
  * Create table, given the table name and a list of the column names
