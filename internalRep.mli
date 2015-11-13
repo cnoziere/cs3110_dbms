@@ -1,21 +1,27 @@
-(* This module contains the internal representation of data in a database and
- * methods to read and modify the stored data *)
 
-(* primary key, unique in each table *)
-type key = string
-
-(* value type, all values are representated as strings *)
-type val = string
-
-(* column: list of (row_name, val) pairs, where val is the value
- * stored at row_name, column in a table *)
-type column = (row_name: string, val) list
-
-(* table: list of (col_name, column) pairs *)
-type table = (col_name: string, column) list
-
+ (**
+  * database is a tree that stores:
+  *   t_key: tree keys are table names, of type [string]
+  *   t_value: tree values are of type [table]
+  *)
 (* database: list of (table_name, table) pairs *)
 type database = (table_name: string, table) list
+
+(**
+ * table is a tree that stores:
+ *   t_key: tree keys are column names, of type [string]
+ *   t_value: tree values are of type [column]
+ *)
+type table = (col_name: string, column) list
+
+(**
+ * column is a tree that stores:
+ *   t_key: tree keys are of type [value]
+ *   t_value: tree values are of type [key]
+ * where [value] is the table value at the column and the row [key]
+ *)
+type column = key tree
+
 
 (* create table with empty columns *)
 val create_table: (table_name: string) -> (columns: string list)
