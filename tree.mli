@@ -1,6 +1,6 @@
 
 (**
- * tree is a mutable tree data structure storing values of type 'a
+ * tree is a tree data structure storing values of type 'a
  *)
 type 'a tree
 
@@ -41,13 +41,13 @@ val value_member : tree -> t_value -> bool
 (**
  * Inserts a (key,value) pair into the tree, given the tree, key, and value
  * If the key already exists, update the key to have the new value
- * Returns unit
+ * Returns the updated tree
  *)
-val insert : tree -> t_key -> t_value -> unit
+val insert : tree -> t_key -> t_value -> tree
 
 (**
  * Removes the given key from the dictionary, given the tree and key
  * If the key is not present, nothing is changed
- * Returns unit
+ * Returns the updated tree
  *)
-val remove : tree -> t_key -> unit
+val remove : tree -> t_key -> tree
