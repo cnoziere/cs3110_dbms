@@ -43,46 +43,59 @@ val create_table: (table_name: string) -> (column_names: string list) -> table
  * Add new row to a table, given the table, a list of the column names and
  * a list of the respective values to populate the row
  * Values not provided are assigned empty strings
- * Returns Failure if the row is an exact duplicate, otherwise returns Success
- * Returns Failure if table or columns do not exist
  *)
-val add_row: (table_name: string) -> (column_names: string list) -> (value list) -> unit result
+val add_row: table -> (column_names: string list)
+    -> (value list) -> unit
 
 (**
  * Given the table, a list of the column names and a list of the respective
  * values, return the keys for all the rows for which the
  * column values match
  * If the provided columns and values are empty, return all keys
- * Returns Failure if the columns list and val list do not have the same length
- * Returns Failure if table or columns do not exist
  *)
-val get_row: (table_name: string) -> (column_names: string list) -> (value list)
-    -> key list result
+val get_row: table -> (column_names: string list) -> (value list)
+    -> key list
 
 (**
  * Given the table, the column name, and key, return the value in table at
  * key, col_name
- * Returns Failure if table, key or column does not exist
  *)
-val get_value: (table_name: string) -> (col_name: string) -> key -> value result
+val get_value_table: table -> (col_name: string) -> key -> value
+
+(**
+ * Given the column and key, return the value at key, col_name
+ *)
+val get_value_col: column -> key -> value
 
 (**
  * Given the table, the column name, key, and a new value, update the value
  * in table_name at key, col_name
- * Returns Failure if table, key or column does not exist
  *)
-val update_value: (table_name: string) -> (col_name: string) -> key
-    -> (updated: val) -> unit result
+val update_value: table -> (col_name: string) -> key
+    -> (updated: val) -> unit
 
 (**
  * Given the table and key, delete row associated with the key in the
  * given table
- * Returns Failure if table, key or column does not exist
  *)
-val delete_row: (table_name: string) -> key -> unit result
+val delete_row: table -> key -> unit
+
+(**
+ * Given the table and column name, delete column
+ *)
+val delete_col: table -> (col_name: string) -> unit
 
 (**
  * Given the table, return string list of column names
- * Returns Failure if table does not exist
  *)
-val get_columns: (table_name: string) -> string list result
+val get_column_list: table -> string list
+
+(**
+ * Given the table and column name, return column
+ *)
+val get_column: table -> (col_name: string) -> column
+
+(**
+ * Given the table name, return table in the database
+ *)
+val get_column: (table_name: string) -> table
