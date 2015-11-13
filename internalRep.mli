@@ -5,7 +5,7 @@
   *   t_value: tree values are of type [table]
   *)
 (* database: list of (table_name, table) pairs *)
-type database = (table_name: string, table) list
+type database = {tables: (table_name: string, table) list; updated : t Ivar.t}
 
 (**
  * table is a tree that stores:
@@ -22,6 +22,13 @@ type table = (col_name: string, column) list
  *)
 type column = key tree
 
+(* update creates a new database with an empty Ivar and fills the
+updated field of the current database with the new database *)
+val update : database -> unit
+
+(* returns a deferred that becomes determined once the database
+has been modified *)
+val updated : database -> 'a Deferred.t
 
 (* create table with empty columns *)
 val create_table: (table_name: string) -> (columns: string list)
