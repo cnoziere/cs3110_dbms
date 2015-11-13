@@ -3,28 +3,6 @@
  * methods to read and modify the stored data
  *)
 
-(**
- * database is a tree that stores:
- *   t_key: tree keys are table names, of type [string]
- *   t_value: tree values are of type [table]
- *)
-type database = {tables: (table_name: string, table) list; updated : t Ivar.t}
-
-(**
- * table is a reference to a tree that stores:
- *   t_key: tree keys are column names, of type [string]
- *   t_value: tree values are of type [column]
- *)
-type table = column tree ref
-
-(**
- * column is a reference to a tree that stores:
- *   t_key: tree keys are of type [value]
- *   t_value: tree values are of type [key]
- * where [value] is the table value at the column and the row [key]
- *)
-type column = key tree ref
-
 (* update creates a new database with an empty Ivar and fills the
 updated field of the current database with the new database *)
 val update : database -> unit
