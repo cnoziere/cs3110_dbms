@@ -16,9 +16,21 @@ val create_tree: unit -> 'a tree
 val insert: string -> 'a option -> 'a tree -> 'a tree
 
 (**
+ * Remove 'a item with a string key and return the updated tree
+ * If string key does not exist, return the original tree
+ *)
+val remove: string -> 'a tree -> 'a tree
+
+(**
  * Print an int tree to terminal
  *)
 val print_int_tree: int tree -> unit
+
+
+
+
+
+
 
 (*
 
