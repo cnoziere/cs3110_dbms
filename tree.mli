@@ -1,4 +1,27 @@
 
+type char_key
+
+type 'a tree
+
+
+(**
+ * Create an empty new tree
+ *)
+val create_tree: unit -> 'a tree
+
+(**
+ * Insert 'a item with a string name and return the updated tree
+ * If a value already exists for the string key, replace the stored value
+ *)
+val insert: string -> 'a option -> 'a tree -> 'a tree
+
+(**
+ * Print an int tree to terminal
+ *)
+val print_int_tree: int tree -> unit
+
+(*
+
 (**
  * tree is a tree data structure storing values of type 'a
  *)
@@ -51,3 +74,5 @@ val insert : tree -> t_key -> t_value -> tree
  * Returns the updated tree
  *)
 val remove : tree -> t_key -> tree
+
+*)
