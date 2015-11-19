@@ -1,3 +1,5 @@
+open Tree
+open Async.Std
 (**
  * key is the primary key, unique in each table.
  *)
@@ -9,11 +11,12 @@ type key = int
 type value = string
 
 (**
- * database is a tree that stores:
- *   t_key: tree keys are table names, of type [string]
- *   t_value: tree values are of type [table]
+ * column is a reference to a tree that stores:
+ *   t_key: tree keys are of type [value]
+ *   t_value: tree values are of type [key]
+ * where [value] is the table value at the column and the row [key]
  *)
-type database = {tables: (table_name: string, table) list; updated : t Ivar.t}
+type column = key tree ref
 
 (**
  * table is a reference to a tree that stores:
@@ -23,12 +26,11 @@ type database = {tables: (table_name: string, table) list; updated : t Ivar.t}
 type table = column tree ref
 
 (**
- * column is a reference to a tree that stores:
- *   t_key: tree keys are of type [value]
- *   t_value: tree values are of type [key]
- * where [value] is the table value at the column and the row [key]
+ * database is a tree that stores:
+ *   t_key: tree keys are table names, of type [string]
+ *   t_value: tree values are of type [table]
  *)
-type column = key tree ref
+type database = {tables: (string * table) list; updated : database Ivar.t}
 
 (**
  * op is the type of operators used in WHERE clauses.

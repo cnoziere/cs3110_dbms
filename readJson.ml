@@ -7,19 +7,14 @@ open Operation
 filename *)
 (* returns false if the file cannot be found or a database with that
 name already exists *)
+
 let read_JSON = failwith "TODO"
 (* Yojson.Basic.from_file file *)
 
-
-(* creates the database specified by the JSON value *)
-(* returns true if creation of the database was successful *)
-(* otherwise returns false if the JSON value could not be parsed *)
-let create_database = failwith "TODO"
-
-let rec row_by_row f = function
+let rec one_by_one f = function
   | [] -> Success
   | hd :: tl -> (match f hd with
-                | Success -> row_by_row f tl
+                | Success -> one_by_one f tl
                 | Failure s -> Failure s)
 
 let to_row jsonrow =
@@ -51,4 +46,23 @@ let create_full_table json =
 
     match Operation.create_table table_name column_names with
     | Failure s -> Failure s
-    | Success -> row_by_row f rows
+    | Success -> one_by_one f rows
+
+(* creates the database specified by the JSON value *)
+(* returns Success upon successful creation of the
+database; otherwise returns Failure *)
+let create_database json =
+    let open Yojson.Basic.Util in
+    (* let db_name =
+        json
+        |> member "dbName"
+        |> to_string in *)
+
+    let tables =
+        [json]
+        |> filter_member "tables"
+        |> flatten in
+
+    one_by_one create_full_table tables
+
+(* TO COMPILE: cs3110 compile -t -p async -p yojson readJson.ml *)

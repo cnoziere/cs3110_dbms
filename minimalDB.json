@@ -1,0 +1,23 @@
+{ "dbName": "WOOOW",
+  "tables": [
+{
+  "tableName": "Bonjour",
+  "columnNames": ["Name", "Age", "Color"],
+  "rows":
+  [
+    ["Constance", "20", "Green"],
+    ["Audrey", "13", "Blue"]
+  ]
+},
+
+{
+  "tableName": "Aurevoir",
+  "columnNames": ["Name", "Age", "Color"],
+  "rows":
+  [
+    ["Lauren", "50", "Purple"],
+    ["Paul", "1", "Orange"]
+  ]
+}
+]
+}
