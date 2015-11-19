@@ -9,20 +9,26 @@ type key = int
 type value = string
 
 (**
- * column is a list of pairs, where name is the row name, and value is the
- * value stored at that row key and column in the table.
+ * database is a tree that stores:
+ *   t_key: tree keys are table names, of type [string]
+ *   t_value: tree values are of type [table]
  *)
-type column = (key * value) list
+type database = {tables: (table_name: string, table) list; updated : t Ivar.t}
 
 (**
- * table is a list of pairs containing a column name and a column.
+ * table is a reference to a tree that stores:
+ *   t_key: tree keys are column names, of type [string]
+ *   t_value: tree values are of type [column]
  *)
-type table = (string * column) list
+type table = column tree ref
 
 (**
- * database is a list of pairs containing a table name and a table.
+ * column is a reference to a tree that stores:
+ *   t_key: tree keys are of type [value]
+ *   t_value: tree values are of type [key]
+ * where [value] is the table value at the column and the row [key]
  *)
-type database = (string * table) list
+type column = key tree ref
 
 (**
  * op is the type of operators used in WHERE clauses.

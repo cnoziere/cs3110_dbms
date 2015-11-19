@@ -1,6 +1,41 @@
 
+type char_key
+
+type 'a tree
+
+
 (**
- * tree is a mutable tree data structure storing values of type 'a
+ * Create an empty new tree
+ *)
+val create_tree: unit -> 'a tree
+
+(**
+ * Insert 'a item with a string name and return the updated tree
+ * If a value already exists for the string key, replace the stored value
+ *)
+val insert: string -> 'a option -> 'a tree -> 'a tree
+
+(**
+ * Remove 'a item with a string key and return the updated tree
+ * If string key does not exist, return the original tree
+ *)
+val remove: string -> 'a tree -> 'a tree
+
+(**
+ * Print an int tree to terminal
+ *)
+val print_int_tree: int tree -> unit
+
+
+
+
+
+
+
+(*
+
+(**
+ * tree is a tree data structure storing values of type 'a
  *)
 type 'a tree
 
@@ -41,13 +76,15 @@ val value_member : tree -> t_value -> bool
 (**
  * Inserts a (key,value) pair into the tree, given the tree, key, and value
  * If the key already exists, update the key to have the new value
- * Returns unit
+ * Returns the updated tree
  *)
-val insert : tree -> t_key -> t_value -> unit
+val insert : tree -> t_key -> t_value -> tree
 
 (**
  * Removes the given key from the dictionary, given the tree and key
  * If the key is not present, nothing is changed
- * Returns unit
+ * Returns the updated tree
  *)
-val remove : tree -> t_key -> unit
+val remove : tree -> t_key -> tree
+
+*)
