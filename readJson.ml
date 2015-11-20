@@ -40,9 +40,6 @@ let create_full_table json =
     | Failure s -> Failure s
     | Success -> one_by_one f rows
 
-(* creates the database specified by the JSON value *)
-(* returns Success upon successful creation of the
-database; otherwise returns Failure *)
 let create_database json =
     let open Yojson.Basic.Util in
     (* let db_name =
@@ -56,10 +53,6 @@ let create_database json =
         |> flatten in
 
     one_by_one create_full_table tables
-
-(* create the database specified by contents of the file with the
-given filename *)
-(* raises an exception if the file cannot be found *)
 
 let read_JSON file =
   match
