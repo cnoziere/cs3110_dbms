@@ -3,14 +3,6 @@ open Yojson.Basic.Util
 open Types
 open Operation
 
-(* create the database specified by contents of the file with the given
-filename *)
-(* returns false if the file cannot be found or a database with that
-name already exists *)
-
-let read_JSON = failwith "TODO"
-(* Yojson.Basic.from_file file *)
-
 let rec one_by_one f = function
   | [] -> Success
   | hd :: tl -> (match f hd with
@@ -64,5 +56,17 @@ let create_database json =
         |> flatten in
 
     one_by_one create_full_table tables
+
+(* create the database specified by contents of the file with the
+given filename *)
+(* raises an exception if the file cannot be found *)
+
+let read_JSON file =
+  match
+    try Some (Yojson.Basic.from_file file)
+    with _ -> None
+  with
+  | None -> Failure ("No such file or directory: " ^ file)
+  | Some json -> create_database json
 
 (* TO COMPILE: cs3110 compile -t -p async -p yojson readJson.ml *)
