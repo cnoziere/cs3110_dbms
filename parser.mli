@@ -1,5 +1,6 @@
 open Types
 
+(*
 (**
  * Starts REPL to infinitely loop to read user input, and calls other
  * Parser functions to evaluate and print.
@@ -21,3 +22,4 @@ val print_error : result -> unit
 val print_values : value list -> unit
 
 val print_table : table -> unit
+*)
