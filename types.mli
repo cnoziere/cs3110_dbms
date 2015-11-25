@@ -41,4 +41,4 @@ type op = Eq | NotEq | Gt | Lt | GtEq | LtEq | Between | Like | In
  * results signal whether a database operation was successful or failed.
  * Failures contain a user-facing message to display.
  *)
-type result = Success | Failure of string
+type result = Success | Message of string | Failure of string
