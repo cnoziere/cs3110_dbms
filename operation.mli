@@ -18,10 +18,10 @@ val drop_table : string -> result
 val add_row : string -> string list -> value list -> result
 
 (**
- * Deletes a row from a table, given the table name, and a list of
- * (column name, value) pairs to identify the row. Returns a type result.
+ * Deletes a row from a table, given the table name, and None or a
+ * (column name, value) pair to identify the row. Returns a type result.
  *)
-val delete_row : string -> (string * value) list -> result
+val delete_row : string -> (string * value) option -> result
 
 (**
  * Updates a table, given the table name, a list of (column name, value) pairs

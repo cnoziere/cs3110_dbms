@@ -1,3 +1,6 @@
+open Types
+open Async.Std
+
 (**
  * This module contains the internal representation of data in a database and
  * methods to read and modify the stored data
@@ -13,32 +16,36 @@ val updated : database -> 'a Deferred.t
 
 (**
  * Create table, given the table name and a list of the column names
- * Return table with empty columns
+ * Return result of Success or Failure
  *)
-val create_table: (table_name: string) -> (column_names: string list) -> table
+val create_table: string -> string list -> result
 
 (**
- * Add new row to a table, given the table, a list of the column names and
- * a list of the respective values to populate the row
+ * Drop table, given the table name
+ * Return result of Success or Failure
+ *)
+val drop_table: string -> result
+
+(**
+ * Add new row to a table, given the table name, a list of the column names,
+ * and a list of the respective values to populate the row
  * Values not provided are assigned empty strings
  *)
-val add_row: table -> (column_names: string list)
-    -> (value list) -> unit
+val add_row: string -> string list -> value list -> result
 
 (**
- * Given the table, a list of the column names and a list of the respective
- * values, return the keys for all the rows for which the
+ * Given the table name, a list of the column names, and a list of the
+ * corresponding values, return the keys for all the rows for which the
  * column values match
  * If the provided columns and values are empty, return all keys
  *)
-val get_row: table -> (column_names: string list) -> (value list)
-    -> key list
+val get_row: string -> string list -> value list -> key list
 
 (**
  * Given the table, the column name, and key, return the value in table at
  * key, col_name
  *)
-val get_value_table: table -> (col_name: string) -> key -> value
+val get_value_table: table -> string -> key -> value
 
 (**
  * Given the column and key, return the value at key, col_name
@@ -49,19 +56,18 @@ val get_value_col: column -> key -> value
  * Given the table, the column name, key, and a new value, update the value
  * in table_name at key, col_name
  *)
-val update_value: table -> (col_name: string) -> key
-    -> (updated: val) -> unit
+val update_value: table -> string -> key -> value -> unit
 
 (**
- * Given the table and key, delete row associated with the key in the
+ * Given the table name and key, delete row associated with the key in the
  * given table
  *)
-val delete_row: table -> key -> unit
+val delete_row: string -> key -> result
 
 (**
  * Given the table and column name, delete column
  *)
-val delete_col: table -> (col_name: string) -> unit
+val delete_col: table -> string -> unit
 
 (**
  * Given the table, return string list of column names
@@ -71,9 +77,9 @@ val get_column_list: table -> string list
 (**
  * Given the table and column name, return column
  *)
-val get_column: table -> (col_name: string) -> column
+val get_column: table -> string -> column
 
 (**
  * Given the table name, return table in the database
  *)
-val get_column: (table_name: string) -> table
+val get_column: string -> table
