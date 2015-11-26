@@ -35,12 +35,13 @@ type database = {tables: (string * table) list; updated : database Ivar.t}
 (**
  * op is the type of operators used in WHERE clauses.
  *)
-type op = Eq | NotEq | Gt | Lt | GtEq | LtEq | Between | Like | In
+type op = Eq | NotEq | Gt | Lt | GtEq | LtEq
 
 (**
  * results signal whether a database operation was successful or failed.
  * Failures contain a user-facing message to display.
  * P types indicate whether parsing succeeded or failed.
  *)
-type result = Success | Failure of string
+type result = Success | Failure of string | Column of value list
               | PFailure of string | PMessage of string
+              | OpColumn of value list list

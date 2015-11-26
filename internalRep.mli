@@ -30,6 +30,7 @@ val drop_table: string -> result
  * Add new row to a table, given the table name, a list of the column names,
  * and a list of the respective values to populate the row
  * Values not provided are assigned empty strings
+ * Return result of Success or Failure
  *)
 val add_row: string -> string list -> value list -> result
 
@@ -40,6 +41,35 @@ val add_row: string -> string list -> value list -> result
  * If the provided columns and values are empty, return all keys
  *)
 val get_row: string -> string list -> value list -> key list
+
+(**
+ * Given the table name and key, delete row associated with the key in the
+ * given table
+ * Return result of Success or Failure
+ *)
+val delete_row: string -> key -> result
+
+(**
+ * Given the table name, the column name, key, and a new value, update the
+ * value in table_name at key, col_name
+ * Return result of Success or Failure
+ *)
+val update_value: string -> string -> key -> value -> result
+
+(**
+ * Given the table name and column name, return the list of values in the column
+ * Returns a result of Failure or Column
+ *)
+val get_column: string -> string -> result
+
+
+
+(* ATTTENTION: this is a temporary comment. Just to indicate some changes.
+   - Everything above this comment is used by Operation (or some by JSON).
+   - Below that are functions which aren't being used, so they could be
+     removed from the .mli file entirely if no one needs them by the end. *)
+
+
 
 (**
  * Given the table, the column name, and key, return the value in table at
@@ -53,18 +83,6 @@ val get_value_table: table -> string -> key -> value
 val get_value_col: column -> key -> value
 
 (**
- * Given the table, the column name, key, and a new value, update the value
- * in table_name at key, col_name
- *)
-val update_value: table -> string -> key -> value -> unit
-
-(**
- * Given the table name and key, delete row associated with the key in the
- * given table
- *)
-val delete_row: string -> key -> result
-
-(**
  * Given the table and column name, delete column
  *)
 val delete_col: table -> string -> unit
@@ -75,11 +93,6 @@ val delete_col: table -> string -> unit
 val get_column_list: table -> string list
 
 (**
- * Given the table and column name, return column
- *)
-val get_column: table -> string -> column
-
-(**
  * Given the table name, return table in the database
  *)
-val get_column: string -> table
+val get_table: string -> table
