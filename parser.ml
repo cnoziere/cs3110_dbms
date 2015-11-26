@@ -42,7 +42,11 @@ let delete_from params = match params with
 let update params = match params with
   | [] -> PFailure("Error UPDATE: no tablename.")
   | h::[] -> PFailure("Error UPDATE: no columns or values.")
-  | h::t -> PMessage("TODO, split lists and call Operation")
+  | h::t -> Failure("TODO, split lists and call Operation")
+
+let select params = match params with
+  | [] -> PFailure("Error SELECT: no columns or values.")
+  | h::t -> Failure("TODO, split lists and call Operation")
 
 let evaluate input =
   let word_lst = Str.split (Str.regexp "[ \t]+") input in
@@ -59,13 +63,18 @@ let evaluate input =
     | h::ha::t when (String.lowercase h)="delete"&&(String.lowercase ha)="from" ->
         (delete_from t, true)
     | h::t when (String.lowercase h)="update" -> (update t, true)
+    | h::t when (String.lowercase h)="select" -> (select t, true)
     | _ -> (PFailure("Error: command not recognized."), true)
+
+let print_cols col_lst = failwith "TODO"
 
 let print_result res = match res with
   | Success -> Printf.printf "%s\n" "Success"
   | Failure x -> Printf.printf "%s\n" x
   | PMessage x -> Printf.printf "%s\n" x
   | PFailure x -> Printf.printf "%s\n" x
+  | OpColumn x -> print_cols x
+  | _ -> failwith "Will not reach this case."
 
 let rec repl () =
   let () = Printf.printf "\n> " in

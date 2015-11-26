@@ -12,14 +12,7 @@ val start_repl : unit -> unit
  *)
 val evaluate : string -> (result * bool)
 
-(*
 (**
- * Functions to display results with a readable format in the terminal.
+ * Display results with a readable format in the terminal.
  *)
-
-val print_error : result -> unit
-
-val print_values : value list -> unit
-
-val print_table : table -> unit
-*)
+val print_result : result -> unit

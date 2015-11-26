@@ -24,25 +24,26 @@ val add_row : string -> string list -> value list -> result
 val delete_row : string -> (string * value) option -> result
 
 (**
- * Updates a table, given the table name, a list of (column name, value) pairs
- * to identify the row, and the new data as a list of (column name, value
- * pairs. Returns a type result.
+ * Updates a table, given the table name, the new data as a list of
+ * column names and a list of values, and None or a (column name, value) pair
+ * to identify the row. Returns a type result.
  *)
-val update : string -> (string * value) list -> (string * value) list -> result
+val update : string -> string list -> value list ->
+             (string * value) option -> result
 
 (**
- * Finds values that match the select-from command, given:
- *   column names (select)
- *   table name (from)
- * Returns a table of the result set.
+ * Finds values that match the select-from command, given column names
+ * list (select) and table name (from).
+ * Returns a result Failure if any selection fails. Otherwise, if all succeed,
+ * returns a result OColumn containing the value lists for each selection.
  *)
-val select_from : string list -> string -> table
+val select_from : string list -> string -> result
 
 (**
- * Finds values that match the select-from-where commands, given:
- *   list of column names (select)
- *   table name (from)
- *   triple of column name, operator, value (where) that results must match
- * Returns a table of the result set.
+ * Finds values that match the select-from-where commands, given column names
+ * list (select), table name (from), and column name, operator, value (where)
+ * that results must match.
+ * Returns a result Failure if any selection fails. Otherwise, if all succeed,
+ * returns a result OColumn containing the value lists for each selection.
  *)
-val select_from_where : string list -> string -> (string * op * value) -> table
+val select_from_where : string list -> string -> string -> op -> value -> result
