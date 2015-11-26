@@ -14,28 +14,29 @@ let load params = match params with
   | _ -> PFailure("Error LOAD: too many parameters.")
 
 let create_table params = match params with
-  | [] -> PFailure("Error CREATE TABLE: no column names.")
-  | _ -> PMessage("TODO, call Operation here")
+  | [] -> PFailure("Error CREATE TABLE: no table name.")
+  | h::[] -> PFailure("Error CREATE TABLE: no column names.")
+  | h::t -> Failure("TODO, call Operation here")
 
 let drop_table params = match params with
   | [] -> PFailure("Error DROP TABLE: no tablename.")
-  | h::[] -> PMessage("TODO, call Operation here")
+  | h::[] -> Failure("TODO, call Operation here")
   | _ -> PFailure("Error DROP TABLE: too many parameters.")
 
 let insert_into params =
   match params with
     | [] -> PFailure("Error INSERT INTO: no tablename.")
     | h::[] -> PFailure("Error INSERT INTO: no columns or values.")
-    | h::t -> PMessage("TODO, split lists and call Operation")
+    | h::t -> Failure("TODO, split lists and call Operation")
         (* call Operation with h=tablename, result of split_lists*)
 
 let delete_from params = match params with
   | [] -> PFailure("Error DELETE FROM: no tablename.")
-  | h::[] -> PMessage("TODO, call Operation here")
+  | h::[] -> Failure("TODO, call Operation here")
   | h::ha::[] when (String.lowercase ha)="where" ->
       PFailure("Error DELETE FROM: no WHERE conditions.")
   | h::ha::t when (String.lowercase ha)="where" ->
-      PMessage("TODO, call Operation here")
+      Failure("TODO, call Operation here")
   | _ -> PFailure("Error DELETE FROM: invalid parameters; does not match [tablename] or WHERE.")
 
 let update params = match params with

@@ -50,11 +50,14 @@ TEST "LOAD valid lowercase" =
 TEST "CREATE TABLE invalid no params" =
   is_parser_fail (fst (Parser.evaluate "CREATE TABLE"))
 
+TEST "CREATE TABLE invalid too few params" =
+  is_parser_fail (fst (Parser.evaluate "CREATE TABLE tablename"))
+
 TEST "CREATE TABLE valid caps" =
-  is_parser_message (fst (Parser.evaluate "CREATE TABLE col1 col2 col3"))
+  is_database_result (fst (Parser.evaluate "CREATE TABLE col1 col2 col3"))
 
 TEST "CREATE TABLE valid lowercase" =
-  is_parser_message (fst (Parser.evaluate "create table col1 col2"))
+  is_database_result (fst (Parser.evaluate "create table col1 col2"))
 
 
 TEST "DROP TABLE invalid no params" =
@@ -64,10 +67,10 @@ TEST "DROP TABLE invalid extra params" =
   is_parser_fail (fst (Parser.evaluate "DROP TABLE extra params"))
 
 TEST "DROP TABLE valid caps" =
-  is_parser_message (fst (Parser.evaluate "DROP TABLE tablename"))
+  is_database_result (fst (Parser.evaluate "DROP TABLE tablename"))
 
 TEST "DROP TABLE valid lowercase" =
-  is_parser_message (fst (Parser.evaluate "drop table tablename"))
+  is_database_result (fst (Parser.evaluate "drop table tablename"))
 
 
 TEST "INSERT INTO invalid no params" =
@@ -77,43 +80,46 @@ TEST "INSERT INTO invalid too few params" =
   is_parser_fail (fst (Parser.evaluate "INSERT INTO tablename"))
 
 TEST "INSERT INTO invalid param mismatch" =
-  is_parser_message (fst (Parser.evaluate "INSERT INTO tablename col1 VALUES"))
+  is_parser_fail (fst (Parser.evaluate "INSERT INTO tablename col1 VALUES"))
 
-TEST "INSERT INTO invalid param mismatch" =
-  is_parser_message (fst (Parser.evaluate "INSERT INTO tablename col1 VALUES col1 col2"))
+TEST "INSERT INTO invalid fewer columns than values" =
+  is_parser_fail (fst (Parser.evaluate "INSERT INTO tablename col1 VALUES col1 col2"))
+
+TEST "INSERT INTO valid fewer values than columns" =
+  is_database_result (fst (Parser.evaluate "INSERT INTO tablename col1 col2 VALUES val1"))
 
 TEST "INSERT INTO valid caps" =
-  is_parser_message (fst (Parser.evaluate "INSERT INTO tablename col1 col2 VALUES val1 val2"))
+  is_database_result (fst (Parser.evaluate "INSERT INTO tablename col1 col2 VALUES val1 val2"))
 
 TEST "INSERT INTO valid lowercase" =
-  is_parser_message (fst (Parser.evaluate "insert into tablename col1 col2 values val1 val2"))
+  is_database_result (fst (Parser.evaluate "insert into tablename col1 col2 values val1 val2"))
 
 
 TEST "DELETE FROM invalid no params" =
   is_parser_fail (fst (Parser.evaluate "DELETE FROM"))
 
 TEST "DELETE FROM invalid bad params" =
-  is_parser_fail (fst (Parser.evaluate "DELETE FROM tablename nokeywords col1='val1'"))
+  is_parser_fail (fst (Parser.evaluate "DELETE FROM tname nokeyword col='val'"))
 
 TEST "DELETE FROM invalid bad params" =
-  is_parser_fail (fst (Parser.evaluate "DELETE FROM tablename WHERE col1=val1"))
+  is_parser_fail (fst (Parser.evaluate "DELETE FROM tname WHERE col=noquotes"))
 
 TEST "DELETE FROM valid delete all" =
-  is_parser_fail (fst (Parser.evaluate "DELETE FROM tablename"))
+  is_database_result (fst (Parser.evaluate "DELETE FROM tname"))
 
 TEST "DELETE FROM valid delete all" =
-  is_parser_fail (fst (Parser.evaluate "DELETE * FROM tablename"))
+  is_database_result (fst (Parser.evaluate "DELETE * FROM tname"))
 
 TEST "DELETE FROM valid with WHERE" =
-  is_parser_fail (fst (Parser.evaluate "DELETE FROM tablename WHERE col='val'"))
+  is_database_result (fst (Parser.evaluate "DELETE FROM tname WHERE col='val'"))
 
-TEST "DELETE FROM valid with WHERE" =
-  is_parser_fail (fst (Parser.evaluate "DELETE FROM tablename WHERE col = 'val'"))
+TEST "DELETE FROM valid with WHERE spaces" =
+  is_database_result (fst (Parser.evaluate "DELETE FROM tname WHERE col = 'val'"))
 
 TEST "DELETE FROM valid lowercase" =
-  is_parser_fail (fst (Parser.evaluate "delete from tablename where col='val'"))
+  is_database_result (fst (Parser.evaluate "delete from tname where col='val'"))
 
-
+(*
 TEST "UPDATE invalid no params" =
   is_parser_fail (fst (Parser.evaluate "UPDATE"))
 
@@ -137,3 +143,4 @@ TEST "UPDATE valid with WHERE" =
 
 TEST "UPDATE valid lowercase" =
   is_parser_fail (fst (Parser.evaluate "update tablename set col1='val1',col2='val2' where col='val'"))
+*)
