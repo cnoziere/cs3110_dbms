@@ -1,47 +1,47 @@
 open Types
 
 let exit params = match params with
-  | [] -> (Message("Exiting.\n"), false)
-  | _ -> (Failure("Error EXIT: too many parameters."), true)
+  | [] -> (PMessage("Exiting.\n"), false)
+  | _ -> (PFailure("Error EXIT: too many parameters."), true)
 
 let help params = match params with
-  | [] -> Message("TODO print readme commands.")
-  | _ -> Failure("Error HELP: too many parameters.")
+  | [] -> PMessage("TODO print readme commands.")
+  | _ -> PFailure("Error HELP: too many parameters.")
 
 let load params = match params with
-  | [] -> Failure("Error LOAD: no filename.")
-  | h::[] -> Message("TODO, call readJSON here")
-  | _ -> Failure("Error LOAD: too many parameters.")
+  | [] -> PFailure("Error LOAD: no filename.")
+  | h::[] -> Failure("TODO: call readJson")
+  | _ -> PFailure("Error LOAD: too many parameters.")
 
 let create_table params = match params with
-  | [] -> Failure("Error CREATE TABLE: no column names.")
-  | _ -> Message("TODO, call Operation here")
+  | [] -> PFailure("Error CREATE TABLE: no column names.")
+  | _ -> PMessage("TODO, call Operation here")
 
 let drop_table params = match params with
-  | [] -> Failure("Error DROP TABLE: no tablename.")
-  | h::[] -> Message("TODO, call Operation here")
-  | _ -> Failure("Error DROP TABLE: too many parameters.")
+  | [] -> PFailure("Error DROP TABLE: no tablename.")
+  | h::[] -> PMessage("TODO, call Operation here")
+  | _ -> PFailure("Error DROP TABLE: too many parameters.")
 
 let insert_into params =
   match params with
-    | [] -> Failure("Error INSERT INTO: no tablename.")
-    | h::[] -> Failure("Error INSERT INTO: no columns or values.")
-    | h::t -> Message("TODO, split lists and call Operation")
+    | [] -> PFailure("Error INSERT INTO: no tablename.")
+    | h::[] -> PFailure("Error INSERT INTO: no columns or values.")
+    | h::t -> PMessage("TODO, split lists and call Operation")
         (* call Operation with h=tablename, result of split_lists*)
 
 let delete_from params = match params with
-  | [] -> Failure("Error DELETE FROM: no tablename.")
-  | h::[] -> Message("TODO, call Operation here")
+  | [] -> PFailure("Error DELETE FROM: no tablename.")
+  | h::[] -> PMessage("TODO, call Operation here")
   | h::ha::[] when (String.lowercase ha)="where" ->
-      Failure("Error DELETE FROM: no WHERE conditions.")
+      PFailure("Error DELETE FROM: no WHERE conditions.")
   | h::ha::t when (String.lowercase ha)="where" ->
-      Message("TODO, call Operation here")
-  | _ -> Failure("Error DELETE FROM: invalid parameters; does not match [tablename] or WHERE.")
+      PMessage("TODO, call Operation here")
+  | _ -> PFailure("Error DELETE FROM: invalid parameters; does not match [tablename] or WHERE.")
 
 let update params = match params with
-  | [] -> Failure("Error UPDATE: no tablename.")
-  | h::[] -> Failure("Error UPDATE: no columns or values.")
-  | h::t -> Message("TODO, split lists and call Operation")
+  | [] -> PFailure("Error UPDATE: no tablename.")
+  | h::[] -> PFailure("Error UPDATE: no columns or values.")
+  | h::t -> PMessage("TODO, split lists and call Operation")
 
 let evaluate input =
   let word_lst = Str.split (Str.regexp "[ \t]+") input in
@@ -58,12 +58,13 @@ let evaluate input =
     | h::ha::t when (String.lowercase h)="delete"&&(String.lowercase ha)="from" ->
         (delete_from t, true)
     | h::t when (String.lowercase h)="update" -> (update t, true)
-    | _ -> (Failure("Error: command not recognized."), true)
+    | _ -> (PFailure("Error: command not recognized."), true)
 
 let print_result res = match res with
   | Success -> Printf.printf "%s\n" "Success"
-  | Message x -> Printf.printf "%s\n" x
   | Failure x -> Printf.printf "%s\n" x
+  | PMessage x -> Printf.printf "%s\n" x
+  | PFailure x -> Printf.printf "%s\n" x
 
 let rec repl () =
   let () = Printf.printf "\n> " in

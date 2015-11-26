@@ -40,5 +40,7 @@ type op = Eq | NotEq | Gt | Lt | GtEq | LtEq | Between | Like | In
 (**
  * results signal whether a database operation was successful or failed.
  * Failures contain a user-facing message to display.
+ * P types indicate whether parsing succeeded or failed.
  *)
-type result = Success | Message of string | Failure of string
+type result = Success | Failure of string
+              | PFailure of string | PMessage of string
