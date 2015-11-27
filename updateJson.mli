@@ -1,3 +1,6 @@
+open Types
+open Yojson.Basic
+
 (* converts a table into a JSON value *)
 val table_to_JSON: table -> Yosjon.Basic.json
 

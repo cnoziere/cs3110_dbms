@@ -1,13 +1,14 @@
 (* This module handles the creation of databases and tables from files *)
-open Yojson.Basic.Util
 open Types
 open Operation
+open Yojson.Basic
 
 let rec one_by_one f = function
   | [] -> Success
   | hd :: tl -> (match f hd with
                 | Success -> one_by_one f tl
-                | Failure s -> Failure s)
+                | Failure s -> Failure s
+                | _ -> failwith "no")
 
 let to_row jsonrow =
     let open Yojson.Basic.Util in
@@ -39,6 +40,7 @@ let create_full_table json =
     match Operation.create_table table_name column_names with
     | Failure s -> Failure s
     | Success -> one_by_one f rows
+    | _ -> failwith "no"
 
 let create_database json =
     let open Yojson.Basic.Util in
@@ -61,5 +63,7 @@ let read_JSON file =
   with
   | None -> Failure ("No such file or directory: " ^ file)
   | Some json -> create_database json
+
+(* CHECK ALL FAILWITH NOOOOO *)
 
 (* TO COMPILE: cs3110 compile -t -p async -p yojson readJson.ml *)

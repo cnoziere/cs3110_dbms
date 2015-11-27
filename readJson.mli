@@ -1,5 +1,7 @@
 (* This module handles the creation of databases and tables from files *)
 open Types
+open Operation
+open Yojson.Basic
 
 (* [read_JSON file] creates the database specified by contents of file *)
 (* returns Failure if the file could not be found or could not successfully
