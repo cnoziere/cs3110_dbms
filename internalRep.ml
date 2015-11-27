@@ -1,6 +1,14 @@
 open Types
 open Async.Std
 
+(*
+Reminder of type result
+type result = Success | Failure of string | Column of value list
+      | PFailure of string | PMessage of string
+      | OpColumn of value list list
+*)
+
+
 let update = failwith "TODO"
 
 let updated = failwith "TODO"

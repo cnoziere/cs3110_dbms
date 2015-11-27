@@ -1,6 +1,5 @@
 
-type char_key
-
+type bst_key
 type 'a tree
 
 
@@ -22,9 +21,9 @@ val insert: string -> 'a option -> 'a tree -> 'a tree
 val remove: string -> 'a tree -> 'a tree
 
 (**
- * Print an int tree to terminal
+ * Print a string tree to terminal
  *)
-val print_int_tree: int tree -> unit
+val print_string_bst: string tree -> unit
 
 
 

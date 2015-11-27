@@ -4,17 +4,12 @@
  * String keys must not be empty
  *)
 
-(* TODO: alternative Implementation
- * either AVL tree or TST with int list for new keys *)
-
 (* character key for each node *)
-type char_key = char
-
 type 'a tree =
     | Leaf
-    | Node of (char_key * 'a option * 'a tree * 'a tree * 'a tree)
+    | Node of (char * 'a option * 'a tree * 'a tree * 'a tree)
 
-let create_tree (): 'a tree = Leaf
+let create (): 'a tree = Leaf
 
 (**
  * Insert 'a item with a string key and return the updated tree
