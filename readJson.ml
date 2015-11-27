@@ -37,7 +37,7 @@ let create_full_table json =
 
     let f = add_row table_name column_names in
 
-    match Operation.create_table table_name column_names with
+    match create_table table_name column_names with
     | Failure s -> Failure s
     | Success -> one_by_one f rows
     | _ -> failwith "no"
