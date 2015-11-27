@@ -1,6 +1,7 @@
 (**
  * Implementation of a ternary search tree
  * Only unique string paths are allowed
+ * If key is empty "", replace key with one whitespace " "
  *)
 
 (* Each node contains a character key, an 'a value, and three subtrees *)
@@ -18,57 +19,69 @@ let is_char (t: 'a tree) (key: string): bool =
 
 let create (): 'a tree = Leaf
 
-(* TODO: allow empty string keys *)
 
-let rec insert (key: string) (item: 'a) (t: 'a tree): 'a tree =
+(* true if key already exists, key is updated
+ * false if key does not exist, key is inserted
+ *)
+let rec insert (key: string) (item: 'a) (t: 'a tree): (bool * 'a tree) =
+    let key = if key = "" then " " else key in
     match t with
-    | Leaf -> (
-        if key = "" then failwith "Error: empty keys are not allowed"
-        else if (String.length key) = 1 then
-            Node (key.[0], Some item, Leaf, Leaf, Leaf)
+    | Leaf ->
+        (if (String.length key) = 1 then
+            (false, Node (key.[0], Some item, Leaf, Leaf, Leaf))
         else
             let new_key = String.sub key 1 (String.length key - 1) in
-            Node (key.[0], None, Leaf, insert new_key item Leaf, Leaf))
+            let (flag, new_t) = insert new_key item Leaf in
+            (flag, Node (key.[0], None, Leaf, new_t, Leaf)))
     | Node (c, v, t1, t2, t3) ->
-        if key = "" then failwith "Error: empty keys are not allowed"
-        else if (key = Char.escaped c) then
-            Node (c, Some item, t1, t2, t3)
+        if (key = Char.escaped c) then
+            (true, Node (c, Some item, t1, t2, t3))
         else if (key.[0] = c) then
             let new_key = String.sub key 1 (String.length key - 1) in
-            Node (c, v, t1, (insert new_key item t2), t3)
+            let (flag, new_t) = insert new_key item t2 in
+            (flag, Node (c, v, t1, new_t, t3))
         else if (key.[0] < c) then
-            Node (c, v, (insert key item t1), t2, t3)
+            let (flag, new_t) = insert key item t1 in
+            (flag, Node (c, v, new_t, t2, t3))
         else (* key.[0] > c *)
-            Node (c, v, t1, t2, (insert key item t3))
+            let (flag, new_t) = insert key item t3 in
+            (flag, Node (c, v, t1, t2, new_t))
 
-
-let rec remove (key: string) (t: 'a tree): 'a tree =
+(* true if key is removed, tree is updated
+ * false if key does not exist, tree is unchanged *)
+let rec remove (key: string) (t: 'a tree): (bool * 'a tree) =
+    let key = if key = "" then " " else key in
     match t with
-    | Leaf -> Leaf
+    | Leaf -> (false, Leaf)
+    | Node (c, v, t1, t2, t3) when key = Char.escaped c ->
+        let flag = v <> None in
+        (flag, Node (c, None, t1, t2, t3))
+    | Node (c, v, t1, t2, t3) when key.[0] = c ->
+        let new_key = String.sub key 1 (String.length key - 1) in
+        if is_char t1 new_key then
+            let (flag, new_t) = remove new_key t1 in
+            (flag, Node (c, v, new_t, t2, t3))
+        else if is_char t2 new_key then
+            let (flag, new_t) = remove new_key t2 in
+            (flag, Node (c, v, t1, new_t, t3))
+        else
+            let (flag, new_t) = remove new_key t3 in
+            (flag, Node (c, v, t1, t2, new_t))
     | Node (c, v, t1, t2, t3) ->
-        if key = "" then failwith "Error: empty keys are not allowed"
-        else if (key = Char.escaped c) then
-            Node (c, None, t1, t2, t3)
-        else if (key.[0] = c) then
-            let new_key = String.sub key 1 (String.length key - 1) in
-            if is_char t1 new_key then
-                Node (c, v, remove new_key t1, t2, t3)
-            else if is_char t2 new_key then
-                Node (c, v, t1, remove new_key t2, t3)
-            else
-                Node (c, v, t1, t2, remove new_key t3)
-        else if (key.[0] < c) then
-            Node (c, v, (remove key t1), t2, t3)
+        if (key.[0] < c) then
+            let (flag, new_t) = remove key t1 in
+            (flag, Node (c, v, new_t, t2, t3))
         else (* key.[0] > c *)
-            Node (c, v, t1, t2, (remove key t3))
+            let (flag, new_t) = remove key t3 in
+            (flag, Node (c, v, t1, t2, new_t))
 
 
 let rec get (key: string) (t: 'a tree): 'a option =
+    let key = if key = "" then " " else key in
     match t with
     | Leaf -> None
     | Node (c, v, t1, t2, t3) ->
-        if key = "" then failwith "Error: empty keys are not allowed"
-        else if (key = Char.escaped c) then v
+        if (key = Char.escaped c) then v
         else if (key.[0] = c) then
             let new_key = String.sub key 1 (String.length key - 1) in
             if is_char t1 new_key then get new_key t1
@@ -78,14 +91,14 @@ let rec get (key: string) (t: 'a tree): 'a option =
         else get key t3 (* key.[0] > c *)
 
 
-let print_int_tst (t: int tree): unit =
-    let string_int_option = function
-        | None -> "None"
-        | Some v -> string_of_int v in
-    let rec string_int_tst = function
-        | Leaf -> "Leaf"
-        | Node (c, v, t1, t2, t3) ->
-            "Node(\"" ^ (Char.escaped c) ^ "\"," ^ (string_int_option v) ^ ","
-            ^ (string_int_tst t1) ^ "," ^ (string_int_tst t2) ^ ","
-            ^ (string_int_tst t3) ^ ")" in
-    print_endline (string_int_tst t)
+let rec string_int_tst = function
+    | Leaf -> "Leaf"
+    | Node (c, v, t1, t2, t3) ->
+        let string_int_option = function
+            | None -> "None"
+            | Some v -> string_of_int v in
+        "Node(\"" ^ (Char.escaped c) ^ "\"," ^ (string_int_option v) ^ ","
+        ^ (string_int_tst t1) ^ "," ^ (string_int_tst t2) ^ ","
+        ^ (string_int_tst t3) ^ ")"
+
+let print_int_tst (t: int tree): unit = print_endline (string_int_tst t)
