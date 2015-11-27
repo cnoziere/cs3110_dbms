@@ -5,38 +5,50 @@ let exit params = match params with
   | _ -> (PFailure("Error EXIT: too many parameters."), true)
 
 let help params = match params with
-  | [] -> PMessage("TODO print readme commands.")
+  | [] -> PMessage("todo: print readme commands.")
   | _ -> PFailure("Error HELP: too many parameters.")
 
 let load params = match params with
   | [] -> PFailure("Error LOAD: no filename.")
-  | h::[] -> Failure("TODO: call readJson")
+  | h::[] -> Failure("todo: ReadJson.read_JSON h "^h)
   | _ -> PFailure("Error LOAD: too many parameters.")
 
 let create_table params = match params with
   | [] -> PFailure("Error CREATE TABLE: no table name.")
   | h::[] -> PFailure("Error CREATE TABLE: no column names.")
-  | h::t -> Failure("TODO, call Operation here")
+  | h::t -> Failure("todo: Operation.create_table h t "^h^" "^(List.hd t))
 
 let drop_table params = match params with
   | [] -> PFailure("Error DROP TABLE: no tablename.")
-  | h::[] -> Failure("TODO, call Operation here")
+  | h::[] -> Failure("todo: Operation.drop_table h "^h)
   | _ -> PFailure("Error DROP TABLE: too many parameters.")
 
 let insert_into params =
   match params with
     | [] -> PFailure("Error INSERT INTO: no tablename.")
     | h::[] -> PFailure("Error INSERT INTO: no columns or values.")
-    | h::t -> Failure("TODO, split lists and call Operation")
-        (* call Operation with h=tablename, result of split_lists*)
+    | h::t -> Failure("todo: Operation.add_row h ??")
 
 let delete_from params = match params with
   | [] -> PFailure("Error DELETE FROM: no tablename.")
-  | h::[] -> Failure("TODO, call Operation here")
+  | h::[] -> Failure("todo: Operation.delete_row h None "^h)
   | h::ha::[] when (String.lowercase ha)="where" ->
       PFailure("Error DELETE FROM: no WHERE conditions.")
   | h::ha::t when (String.lowercase ha)="where" ->
-      Failure("TODO, call Operation here")
+    begin
+      let param_str = String.concat "" t in
+      let to_match = Str.regexp "\\([A-Za-z0-9]+='[A-Za-z0-9 ]+'\\)" in
+      if Str.string_match to_match param_str 0
+      then
+        let to_remove = Str.regexp "\\('\\)" in
+        let no_quotes = Str.global_replace to_remove "" param_str in
+        let split_on = Str.regexp "\\(=\\)" in
+        let final_list = Str.split split_on no_quotes in
+        let double = (List.nth final_list 0, List.nth final_list 1) in
+        Failure("todo: Operation.delete_row h Some double "^h^" "^(fst double)^ " "^(snd double))
+      else
+        PFailure("Error DELETE FROM: invalid WHERE conditions.")
+    end
   | _ -> PFailure("Error DELETE FROM: invalid parameters; does not match [tablename] or WHERE.")
 
 let update params = match params with
