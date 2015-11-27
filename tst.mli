@@ -9,7 +9,7 @@ val create: unit -> 'a tree
  * Insert 'a item with a string and return the updated tree
  * If a value already exists for the string, replace the stored value
  *)
-val insert: string -> 'a option -> 'a tree -> 'a tree
+val insert: string -> 'a -> 'a tree -> 'a tree
 
 (**
  * Remove 'a item with a string key and return the updated tree

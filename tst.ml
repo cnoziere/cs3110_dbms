@@ -18,20 +18,21 @@ let is_char (t: 'a tree) (key: string): bool =
 
 let create (): 'a tree = Leaf
 
+(* TODO: allow empty string keys *)
 
-let rec insert (key: string) (item: 'a option) (t: 'a tree): 'a tree =
+let rec insert (key: string) (item: 'a) (t: 'a tree): 'a tree =
     match t with
     | Leaf -> (
         if key = "" then failwith "Error: empty keys are not allowed"
         else if (String.length key) = 1 then
-            Node (key.[0], item, Leaf, Leaf, Leaf)
+            Node (key.[0], Some item, Leaf, Leaf, Leaf)
         else
             let new_key = String.sub key 1 (String.length key - 1) in
             Node (key.[0], None, Leaf, insert new_key item Leaf, Leaf))
     | Node (c, v, t1, t2, t3) ->
         if key = "" then failwith "Error: empty keys are not allowed"
         else if (key = Char.escaped c) then
-            Node (c, item, t1, t2, t3)
+            Node (c, Some item, t1, t2, t3)
         else if (key.[0] = c) then
             let new_key = String.sub key 1 (String.length key - 1) in
             Node (c, v, t1, (insert new_key item t2), t3)
