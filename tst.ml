@@ -40,10 +40,7 @@ let rec insert (key: string) (item: 'a option) (t: 'a tree): 'a tree =
         else (* key.[0] > c *)
             Node (c, v, t1, t2, (insert key item t3))
 
-(**
- * Remove 'a item with a string key and return the updated tree
- * If string key does not exist, return the original tree
- *)
+
 let rec remove (key: string) (t: 'a tree): 'a tree =
     match t with
     | Leaf -> Leaf
@@ -65,10 +62,6 @@ let rec remove (key: string) (t: 'a tree): 'a tree =
             Node (c, v, t1, t2, (remove key t3))
 
 
-(**
- * Search for a string key in the tree and return Some of 'a item
- * If string key does not exist, return None
- *)
 let rec get (key: string) (t: 'a tree): 'a option =
     match t with
     | Leaf -> None
@@ -83,9 +76,7 @@ let rec get (key: string) (t: 'a tree): 'a option =
         else if (key.[0] < c) then get key t1
         else get key t3 (* key.[0] > c *)
 
-(**
- * Print tree to terminal for testing
- *)
+
 let print_int_tst (t: int tree): unit =
     let string_int_option = function
         | None -> "None"
