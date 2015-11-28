@@ -22,7 +22,6 @@ type table = column Tst.tree ref
  *)
 type database =
 {
-    (* name: string, in case of multiple databases *)
     mutable data: table Tst.tree;
     mutable updated: unit Ivar.t;
 }
@@ -66,7 +65,7 @@ let create_table = (table_name: string) (col_names: string list): result =
             if is_duplicate then
                 Failure "Table name already exists in database"
             else
-                db := db';
+                update db';
                 Success
         | h::t ->
             let new_column = ref Bst.create () in
