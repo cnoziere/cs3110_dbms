@@ -7,7 +7,7 @@ let rec find_nrows (column : string Bst.tree) =
   | Node (row, data, left, right) -> if right = None then row
                                      else find_nrows right
 
-let rec traverse_column (column : string Bst.tree) =
+let rec traverse_column a (column : string Bst.tree) =
   let open Bst in
   match column with
   | Leaf -> ()
@@ -17,12 +17,13 @@ let rec traverse_column (column : string Bst.tree) =
 
 let parse_column (column : string Bst.tree) =
   let r = find_nrows column + 1 in
-  let arr = Array.make r None in
+  let a = Array.make r None in
+  let _ = traverse_column a column in
   let f a b =
     match b with
     | None -> a @ "None"
     | Some x -> a @ x in
-  (Array.fold_left f [] arr)
+  (Array.fold_left f [] a)
 
 let rec traverse_table acc r (table : column Tst.tree) =
   match table with
@@ -37,9 +38,10 @@ let rec traverse_table acc r (table : column Tst.tree) =
 (* converts a table into a JSON value *)
 let table_to_json (table : column Tst.tree) (tablename : string) =
   let r = ref [] in
-  traverse_table "" r table;        (* r now stores a list of column names to columns *)
+  let () = traverse_table "" r table in
+  (* r now stores a list of column names to columns *)
   let to_list = List.map (fun a -> `List a) in
-  let column_names = List.fold_left (fun a (k,v) -> a @ [`String k]) [] !r) in
+  let column_names = List.fold_left (fun a (k,v) -> a @ [`String k]) [] !r in
   let columns = to_list (List.fold_left (fun a (k,v) -> a @ (to_string v)) [] !r) in
 
   `Assoc [("tableName", `String tablename);
@@ -47,6 +49,7 @@ let table_to_json (table : column Tst.tree) (tablename : string) =
   ("columns", `List columns)]
 
 let rec traverse_database acc r (database : table Tst.tree) =
+  let open Tst in
   match table with
   | Leaf -> ()
   | Node (ch, col, left, mid, right) ->
@@ -65,7 +68,7 @@ let database_to_json (database : table Tst.tree) =
   ("tables", `List !r)] *)
 
 (* writes a JSON value to the specified file name *)
-let JSON_to_file json =
+let JSON_to_file json = failwith "TODO"
 (* Yojson.Basic to_file string json*)
 
 let updated = Ivar.read
