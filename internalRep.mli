@@ -62,13 +62,16 @@ val update_value: string -> string -> key -> value -> result
  *)
 val get_column: string -> string -> result
 
+(**
+ * Given the table name, return string list of column names
+ *)
+val get_column_list: string -> string list
 
 
 (* ATTTENTION: this is a temporary comment. Just to indicate some changes.
    - Everything above this comment is used by Operation (or some by JSON).
    - Below that are functions which aren't being used, so they could be
      removed from the .mli file entirely if no one needs them by the end. *)
-
 
 
 (**
@@ -86,11 +89,6 @@ val get_value_col: column -> key -> value
  * Given the table and column name, delete column
  *)
 val delete_col: table -> string -> unit
-
-(**
- * Given the table, return string list of column names
- *)
-val get_column_list: table -> string list
 
 (**
  * Given the table name, return table in the database
