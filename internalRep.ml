@@ -1,6 +1,24 @@
 open Types
 open Async.Std
 
+(**
+ * A column is represented by a BST with integer keys (the row key)
+ * and string data (table values).
+ *)
+type column = string Bst.tree
+
+(**
+ * A table is represented by a TST with string keys (the names of each column)
+ * contains columns
+ *)
+type table = column Tst.tree
+
+(**
+ * A database is represented by a TST with string keys (the names of each table)
+ * contains tables
+ *)
+type database = table Tst.tree
+
 (*
 Reminder of type result
 type result = Success | Failure of string | Column of value list
