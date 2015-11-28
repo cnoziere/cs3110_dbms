@@ -6,12 +6,16 @@ open Async.Std
  * methods to read and modify the stored data
  *)
 
-(* update creates a new database with an empty Ivar and fills the
-updated field of the current database with the new database *)
+(**
+ * update creates a new database with an empty Ivar and fills the
+ * updated field of the current database with the new database
+ *)
 val update : database -> unit
 
-(* returns a deferred that becomes determined once the database
-has been modified *)
+(**
+ * returns a deferred that becomes determined once the database
+ * has been modified
+ *)
 val updated : database -> 'a Deferred.t
 
 (**
@@ -57,15 +61,18 @@ val delete_row: string -> key -> result
 val update_value: string -> string -> key -> value -> result
 
 (**
- * Given the table name and column name, return the list of values in the column
- * Returns a result of Failure or Column
- *)
-val get_column: string -> string -> result
-
-(**
  * Given the table name, return string list of column names
  *)
-val get_column_list: string -> string list
+val get_column_names: string -> string list
+
+(**
+ * Given the table name, the column name, and a function (value -> bool), return
+ * values in the column that satisfy the function (result Column of value list)
+ * To return all values in a column, input a function that always returns true
+ * Returns result of Failure if table or column names do not exist
+ *)
+val get_column_vals: string -> string -> (value -> bool) -> result
+
 
 
 (* ATTTENTION: this is a temporary comment. Just to indicate some changes.
