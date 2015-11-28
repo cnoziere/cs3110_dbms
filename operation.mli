@@ -34,10 +34,11 @@ val update : string -> string list -> value list ->
 (**
  * Finds values that match the select-from command, given column names
  * list (select) and table name (from).
+ * Passing in column names as None indicates that all column lists are expected.
  * Returns a result Failure if any selection fails. Otherwise, if all succeed,
  * returns a result OColumn containing the value lists for each selection.
  *)
-val select_from : string list -> string -> result
+val select_from : string list option -> string -> result
 
 (**
  * Finds values that match the select-from-where commands, given column names

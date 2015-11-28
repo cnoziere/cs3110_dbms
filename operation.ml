@@ -80,8 +80,11 @@ let update tname col_lst val_lst row_id =
  * returns a result OColumn the value lists for each selection.
  *)
 let select_from col_names tname =
-  let results = List.map (fun x -> InternalRep.get_column tname x) col_names in
-  filter_columns results
+  let col_list = match col_names with
+    | None -> InternalRep.get_column_list tname
+    | Some x -> x in
+    let results = List.map (fun x -> InternalRep.get_column tname x) col_list in
+    filter_columns results
 
 (**
  * Finds values that match the select-from-where commands, given column names
