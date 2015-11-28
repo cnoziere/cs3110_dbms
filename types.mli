@@ -10,27 +10,17 @@ type key = int
  *)
 type value = string
 
-(**
- * column is a reference to a tree that stores:
- *   t_key: tree keys are of type [value]
- *   t_value: tree values are of type [key]
- * where [value] is the table value at the column and the row [key]
- *)
-type column = key tree ref
 
 (**
- * table is a reference to a tree that stores:
- *   t_key: tree keys are column names, of type [string]
- *   t_value: tree values are of type [column]
+ * A database is represented by a TST with string keys (the names of each table)
+ * contains tables
  *)
-type table = column tree ref
-
-(**
- * database is a tree that stores:
- *   t_key: tree keys are table names, of type [string]
- *   t_value: tree values are of type [table]
- *)
-type database = {tables: (string * table) list; updated : database Ivar.t}
+type database =
+{  
+    (* name: string, in case of multiple databases *)
+    mutable data: table Tst.tree;
+    updated: database Ivar.t;
+}
 
 (**
  * op is the type of operators used in WHERE clauses.

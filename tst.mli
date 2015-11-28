@@ -42,3 +42,8 @@ val print_int_tst: int tree -> unit
  * Convert int tree to string
  *)
 val string_int_tst: int tree -> string
+
+(**
+ * Print tree values only
+ *)
+val print_value_tst: int tree -> unit

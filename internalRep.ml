@@ -1,6 +1,7 @@
 open Types
 open Async.Std
 
+
 (**
  * A column is represented by a BST with integer keys (the row key)
  * and string data (table values).
@@ -13,11 +14,6 @@ type column = string Bst.tree ref
  *)
 type table = column Tst.tree ref
 
-(**
- * A database is represented by a TST with string keys (the names of each table)
- * contains tables
- *)
-type database = table Tst.tree ref
 
 (*
 Reminder of type result
@@ -29,14 +25,13 @@ type result = Success | Failure of string | Column of value list
 let db = ref Tst.create ()
 
 
-
 let update = failwith "TODO"
 
 let updated = failwith "TODO"
 
 let create_table = (table_name: string) (col_names: string list): result =
-    if col_names = [] then Failure "No column names are provided to " ^
-        "initialize table" else
+    if col_names = [] then Failure ("No column names are provided to " ^
+        "initialize table") else
     let new_table = ref Tst.create () in
     let key_column = ref Bst.create () in
     (* Column of primary keys is named the empty string *)

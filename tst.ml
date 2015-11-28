@@ -91,14 +91,24 @@ let rec get (key: string) (t: 'a tree): 'a option =
         else get key t3 (* key.[0] > c *)
 
 
+let string_int_option = function
+    | None -> ""
+    | Some v -> string_of_int v
+
 let rec string_int_tst = function
     | Leaf -> "Leaf"
     | Node (c, v, t1, t2, t3) ->
-        let string_int_option = function
-            | None -> "None"
-            | Some v -> string_of_int v in
         "Node(\"" ^ (Char.escaped c) ^ "\"," ^ (string_int_option v) ^ ","
         ^ (string_int_tst t1) ^ "," ^ (string_int_tst t2) ^ ","
         ^ (string_int_tst t3) ^ ")"
 
 let print_int_tst (t: int tree): unit = print_endline (string_int_tst t)
+
+let rec print_value_tst = function
+    | Leaf -> ()
+    | Node (c, v, t1, t2, t3) ->
+        print_endline (Char.escaped c ^ "," ^ string_int_option v);
+        print_value_tst t1;
+        print_value_tst t2;
+        print_value_tst t3;
+        ()

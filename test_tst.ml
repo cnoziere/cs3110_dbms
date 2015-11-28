@@ -80,3 +80,12 @@ TEST "GET_Key" =
     let (_, t) = insert "hello" 42 t in
     print_int_tst t;
     get "hello" t = Some 42
+
+TEST "PRINT_Values" =
+    print_endline "PRINT_Values";
+    let t = create () in
+    let (_, t) = insert "hello" 42 t in
+    print_int_tst t;
+    let (_, t) = insert "hi" 42 t in
+    print_int_tst t;
+    not flag
