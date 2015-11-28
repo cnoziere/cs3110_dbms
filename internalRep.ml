@@ -10,10 +10,22 @@ type column = string Bst.tree ref
 
 (**
  * A table is represented by a TST with string keys (the names of each column)
- * contains columns
+ * containing columns
  *)
 type table = column Tst.tree ref
 
+(**
+ * A database is represented by a TST with string keys (the names of each table)
+ * containing tables
+ * The mutable updated field contains an Ivar that is filled when a change is
+ * made, and is immediately replaced by an unfilled Ivar
+ *)
+type database =
+{
+    (* name: string, in case of multiple databases *)
+    mutable data: table Tst.tree;
+    mutable updated: unit Ivar.t;
+}
 
 (*
 Reminder of type result
@@ -22,12 +34,23 @@ type result = Success | Failure of string | Column of value list
       | OpColumn of value list list
 *)
 
-let db = ref Tst.create ()
+let db: database =
+{
+    data = Tst.create ();
+    updated = Ivar.create ();
+}
 
+(**
+ * [update] updates the data field with a new tree,
+ * fills the Ivar in the database (the deferred read in [updated]
+ * becomes determined), and then replaces the updated field with an empty Ivar
+ *)
+let update (data: table Tst.tree) =
+    db.data <- data;
+    Ivar.fill db.updated;
+    db.updated <- Ivar.create ()
 
-let update = failwith "TODO"
-
-let updated = failwith "TODO"
+let updated = Ivar.read db.updated
 
 let create_table = (table_name: string) (col_names: string list): result =
     if col_names = [] then Failure ("No column names are provided to " ^

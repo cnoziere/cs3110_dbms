@@ -7,16 +7,10 @@ open Async.Std
  *)
 
 (**
- * update creates a new database with an empty Ivar and fills the
- * updated field of the current database with the new database
- *)
-val update : database -> unit
-
-(**
  * returns a deferred that becomes determined once the database
  * has been modified
  *)
-val updated : database -> 'a Deferred.t
+val updated : unit -> 'a Deferred.t
 
 (**
  * Create table, given the table name and a list of the column names
