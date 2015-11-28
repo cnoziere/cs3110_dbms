@@ -3,10 +3,11 @@
 {
   "tableName": "Bonjour",
   "columnNames": ["Name", "Age", "Color"],
-  "rows":
+  "columns":
   [
-    ["Constance", "20", "Green"],
-    ["Audrey", "13", "Blue"]
+    ["Constance", "Amanda", "Asta"],
+    ["12", "13", "14"],
+    ["Green", "Blue", "Purple"]
   ]
 },
 

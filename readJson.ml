@@ -10,34 +10,41 @@ let rec one_by_one f = function
                 | Failure s -> Failure s
                 | _ -> failwith "no")
 
-let to_row jsonrow =
+let to_column jsoncol =
     let open Yojson.Basic.Util in
-    jsonrow
+    jsoncol
     |> to_list
     |> List.map to_string
 
 let create_full_table json =
     let open Yojson.Basic.Util in
-    let table_name =                (* table_name : string *)
+    let table_name =                    (* table_name : string *)
         json
         |> member "tableName"
         |> to_string in
 
-    let column_names =              (* column_names : string list *)
+    let column_names =                  (* column_names : string list *)
         [json]
         |> filter_member "columnNames"
         |> flatten
         |> List.map to_string in
 
-    let rows =                      (* rows : string list list *)
+    let columns =                       (* columns : string list list *)
         [json]
-        |> filter_member "rows"
+        |> filter_member "columns"
         |> flatten
-        |> List.map to_row in
+        |> List.map to_column in
+
+    let rows =                          (* rows: string list list *)
+        match columns with
+        | [] -> []
+        | hd :: tl -> let acc = List.map (fun a -> [a]) hd in
+                      let f = List.map2 (fun a b -> a @ [b]) in
+                      List.fold_left f acc tl in
 
     let f = add_row table_name column_names in
 
-    match Operation.create_table table_name column_names with
+    match create_table table_name column_names with
     | Failure s -> Failure s
     | Success -> one_by_one f rows
     | _ -> failwith "no"
