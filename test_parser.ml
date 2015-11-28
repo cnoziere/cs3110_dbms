@@ -244,9 +244,17 @@ TEST "SELECT FROM WHERE greater than equal to" =
 TEST "SELECT FROM WHERE less than equal to" =
   is_database_result (fst (Parser.evaluate
     "SELECT * FROM tname WHERE col<='val'"))
+*)
 
+TEST_UNIT "print Success" = Parser.print_result Success
+TEST_UNIT "print Failure empty" = Parser.print_result (Failure "")
+TEST_UNIT "print Failure" = Parser.print_result (Failure "x")
+TEST_UNIT "print PMessage" = Parser.print_result (PMessage "")
+TEST_UNIT "print PMessage" = Parser.print_result (PMessage "x")
+TEST_UNIT "print PFailure" = Parser.print_result (PFailure "")
+TEST_UNIT "print PFailure" = Parser.print_result (PFailure "x")
 
+(*
 TEST_UNIT "print OpColumn" = failwith "TODO"
 TEST_UNIT "print entire table" = failwith "TODO"
-
 *)

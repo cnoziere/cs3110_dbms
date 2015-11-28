@@ -1,5 +1,26 @@
 open Types
-open InternalRep
+
+(**
+ * Helper functions. [check_failures] is for [delete_row] and [update].
+ * [filter_columns] used by [select_from] and [select_from_where].
+ *)
+let rec concat_failures results str = match results with
+  | (Failure x)::t -> concat_failures t (str ^ " " ^ x)
+  | _::t -> concat_failures t str
+  | [] -> Failure(str)
+
+let check_failures results =
+  if (List.exists (fun x -> match x with | Failure _ -> true | _ -> false) results)
+  then concat_failures results "" else Success
+
+let rec concat_columns results col_lst = match results with
+  | (Column x)::t -> concat_columns t (col_lst@[x])
+  | _::t -> Failure("Not a column--will not reach this case.")
+  | [] -> OpColumn(col_lst)
+
+let filter_columns results =
+  if (List.exists (fun x -> match x with | Failure _ -> true | _ -> false) results)
+  then concat_failures results "" else concat_columns results []
 
 (**
  * Creates a table, given the table name and list of column names.
@@ -19,28 +40,6 @@ let drop_table tname = InternalRep.drop_table tname
  * Returns a result of Success or Failure.
  *)
 let add_row tname col_names vals = InternalRep.add_row tname col_names vals
-
-(**
- * Helper functions. [check_failures] is for [delete_row] and [update].
- * [filter_columns] used by [select_from] and [select_from_where].
- *)
-let rec concat_failures results str = match results with
-  | (Failure x)::t -> concat_failures t (str ^ x)
-  | _::t -> concat_failures t str
-  | [] -> Failure(str)
-
-let check_failures results =
-  if (List.exists (fun x -> match x with | Failure _ -> true | _ -> false) results)
-  then concat_failures results "" else Success
-
-let rec concat_columns results col_lst = match results with
-  | (Column x)::t -> concat_columns t (x::col_lst)
-  | _::t -> failwith "Will not reach this case."
-  | [] -> OpColumn(col_lst)
-
-let filter_columns results =
-  if (List.exists (fun x -> match x with | Failure _ -> true | _ -> false) results)
-  then concat_failures results "" else concat_columns results []
 
 (**
  * Deletes a row from a table, given the table name, and a list of

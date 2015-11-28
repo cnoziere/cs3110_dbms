@@ -48,3 +48,12 @@ val select_from : string list option -> string -> result
  * returns a result OColumn containing the value lists for each selection.
  *)
 val select_from_where : string list -> string -> string -> op -> value -> result
+
+(**
+ * Helper functions. [check_failures] is for [delete_row] and [update].
+ * [filter_columns] used by [select_from] and [select_from_where].
+ *)
+val concat_failures : result list -> string -> result
+val check_failures : result list -> result
+val concat_columns : result list -> value list list -> result
+val filter_columns: result list -> result

@@ -227,7 +227,7 @@ let print_result res = match res with
   | PMessage x -> Printf.printf "%s\n" x
   | PFailure x -> Printf.printf "%s\n" x
   | OpColumn x -> print_cols x
-  | _ -> failwith "Will not reach this case."
+  | _ -> Printf.printf "%s\n" "Could not print--will not reach this case."
 
 (**
  * Functions to start REPL. Handles the Read and Loop parts.
