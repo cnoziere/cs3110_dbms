@@ -25,3 +25,4 @@ type result = Success | Failure of string | Column of value list
               | PFailure of string | PMessage of string
               | OpColumn of value list list
               | ColNames of string list
+              | Keys of key list

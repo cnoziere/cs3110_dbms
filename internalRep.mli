@@ -61,24 +61,15 @@ val get_column_names: string -> result
  *)
 val get_column_vals: string -> string -> (value -> bool) -> result
 
-
+(**
+ * Given the table name, the column name, and a function (value -> bool), return
+ * the keys for all values that satisfy the function
+ *)
+val get_row: string -> string -> (value -> bool) -> result
 
 (*
 
-(* ATTTENTION: this is a temporary comment. Just to indicate some changes.
-   - Everything above this comment is used by Operation (or some by JSON).
-   - Below that are functions which aren't being used, so they could be
-     removed from the .mli file entirely if no one needs them by the end. *)
-
-
-(** ATTTENTION: equivalent to select_from_where; use get_column_names and get_column_vals
- * Given the table name, a list of the column names, and a list of the
- * corresponding values, return the keys for all the rows for which the
- * column values match
- * If the provided columns and values are empty, return all keys
- *)
-val get_row: string -> string list -> value list -> key list
-
+NOT NECESSARY?
 
 (**
  * Given the table, the column name, and key, return the value in table at
@@ -87,19 +78,8 @@ val get_row: string -> string list -> value list -> key list
 val get_value_table: table -> string -> key -> value
 
 (**
- * Given the column and key, return the value at key, col_name
- *)
-val get_value_col: column -> key -> value
-
-(**
  * Given the table and column name, delete column
  *)
 val delete_col: table -> string -> unit
-
-(**
- * Given the table name, return table in the database
- *)
-val get_table: string -> table
-
 
 *)

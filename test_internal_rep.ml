@@ -176,5 +176,12 @@ TEST "GET_COLUMN_VALS_return_equals" =
     | Failure msg -> print_endline msg; false
     | _ -> false
 
+TEST "GET_ROW_returns_all_keys" =
+    print_endline "GET_ROW_returns_all_keys";
+    match get_row "getcol" "age" (fun x -> x = "11" || x = "10") with
+    | Keys x -> lists_match x [2;3]
+    | Failure msg -> print_endline msg; false
+    | _ -> false
+
 
 (* let _ = Scheduler.go () *)

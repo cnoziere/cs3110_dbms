@@ -219,15 +219,29 @@ let get_column_vals (table_name: string) (column_name: string)
             | [] -> [] in
             Column (check_vals (Bst.list_bst selected_col.data))
 
+
+let get_row (table_name: string) (column_name: string)
+    (to_add: value -> bool): result =
+    match Tst.get table_name db.data with
+    | None -> Failure (table_name ^ " is not a table in the database")
+    | Some selected_table ->
+        match Tst.get column_name (!selected_table) with
+        | None -> Failure (column_name
+            ^ " is not a column in the table " ^ table_name)
+        | Some selected_col ->
+            (* extract list of valid keys from list of keys and values *)
+            let rec check_keys = function
+            | (k,v)::t -> if to_add v then k::check_keys t else check_keys t
+            | [] -> [] in
+            Keys (check_keys (Bst.list_bst selected_col.data))
+
+
 (*
-let get_row = failwith "TODO"
+
+NOT NECESSARY?
 
 let get_value_table = failwith "TODO"
 
-let get_value_col = failwith "TODO"
-
 let delete_col = failwith "TODO"
-
-let get_table = failwith "TODO"
 
 *)
