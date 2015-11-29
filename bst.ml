@@ -84,6 +84,11 @@ let rec get (key: int) (t: 'a tree): 'a option =
             get key right
 
 
+let rec list_bst = function
+    | Node (k, Some v, left, right) -> list_bst left @ [(k, v)] @ list_bst right
+    | _ -> []
+
+
 let print_string_bst (t: string tree): unit =
     let string_option = function
         | None -> "None"

@@ -28,6 +28,11 @@ val remove: int -> 'a tree -> (bool * 'a tree)
 val get: int -> 'a tree -> 'a option
 
 (**
+ * Return list of keys and values
+ *)
+val list_bst: 'a tree -> (int * 'a) list
+
+(**
  * Print a string tree to terminal
  *)
 val print_string_bst: string tree -> unit

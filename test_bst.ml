@@ -91,3 +91,18 @@ TEST "GET_Key" =
     let (_, t) = insert 42 "hello" t in
     print_string_bst t;
     get 42 t = Some "hello"
+
+TEST_UNIT "LIST_bst" =
+    print_endline "LIST_bst";
+    let t = create () in
+    let (_, t) = insert 5 "a" t in
+    let (_, t) = insert 3 "b" t in
+    let (_, t) = insert 7 "c" t in
+    let (_, t) = insert 1 "d" t in
+    let (_, t) = insert 6 "e" t in
+    let (_, t) = insert 2 "f" t in
+    let (_, t) = insert 4 "g" t in
+    let rec print_bst_list = function
+    | (k, x)::xs -> Printf.printf "%d, %s\n" k x; print_bst_list xs
+    | [] -> () in
+    print_bst_list (list_bst t)

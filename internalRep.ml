@@ -35,6 +35,7 @@ Reminder of type result
 type result = Success | Failure of string | Column of value list
       | PFailure of string | PMessage of string
       | OpColumn of value list list
+      | ColNames of string list
 *)
 
 let db: database =
@@ -188,14 +189,37 @@ let update_value (table_name: string) (column_name: string) (key_to_change: key)
                 Success)
             else Failure "Key does not exist"
 
+
+let get_column_names (table_name: string): result =
+    match Tst.get table_name db.data with
+    | None -> Failure (table_name ^ " is not a table in the database")
+    | Some selected_table ->
+        (* Cols is the associative list of col names and columns *)
+        let cols = Tst.list_tst (!selected_table) in
+        if cols = [] then Failure ("No columns exist in table" ^ table_name)
+        else
+            let rec get_names = function
+            | [] -> []
+            | (names, _)::t -> names::(get_names t) in
+            ColNames (get_names cols)
+
+
+let get_column_vals (table_name: string) (column_name: string)
+    (to_add: value -> bool): result =
+    match Tst.get table_name db.data with
+    | None -> Failure (table_name ^ " is not a table in the database")
+    | Some selected_table ->
+        match Tst.get column_name (!selected_table) with
+        | None -> Failure (column_name
+            ^ " is not a column in the table " ^ table_name)
+        | Some selected_col ->
+            (* extract list of valid values from list of keys and values *)
+            let rec check_vals = function
+            | (_,v)::t -> if to_add v then v::check_vals t else check_vals t
+            | [] -> [] in
+            Column (check_vals (Bst.list_bst selected_col.data))
+
 (*
-
-let get_column_names: string -> string list
-
-let get_column_vals: string -> string -> (value -> bool) -> result
-
-
-
 let get_row = failwith "TODO"
 
 let get_value_table = failwith "TODO"

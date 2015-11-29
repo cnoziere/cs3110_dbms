@@ -48,12 +48,10 @@ val delete_row: string -> key -> result
  *)
 val update_value: string -> string -> key -> value -> result
 
-(*
-
 (**
- * Given the table name, return string list of column names
+ * Given the table name, return result of ColName, a string list of column names
  *)
-val get_column_names: string -> string list
+val get_column_names: string -> result
 
 (**
  * Given the table name, the column name, and a function (value -> bool), return
@@ -64,6 +62,8 @@ val get_column_names: string -> string list
 val get_column_vals: string -> string -> (value -> bool) -> result
 
 
+
+(*
 
 (* ATTTENTION: this is a temporary comment. Just to indicate some changes.
    - Everything above this comment is used by Operation (or some by JSON).

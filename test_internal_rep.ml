@@ -136,4 +136,12 @@ TEST "UPDATE_VALUE_no_key" =
     | Failure _ -> true
     | _ -> false
 
+TEST "UPDATE_VALUE_no_key" =
+    print_endline "UPDATE_VALUE_no_key";
+    match update_value "addrow" "age" 8 "19" with
+    | Failure _ -> true
+    | _ -> false
+
+
+
 (* let _ = Scheduler.go () *)
