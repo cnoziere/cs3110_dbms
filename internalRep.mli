@@ -33,14 +33,6 @@ val drop_table: string -> result
  *)
 val add_row: string -> string list -> value list -> result
 
-(*
-(**
- * Given the table name, a list of the column names, and a list of the
- * corresponding values, return the keys for all the rows for which the
- * column values match
- * If the provided columns and values are empty, return all keys
- *)
-val get_row: string -> string list -> value list -> key list
 
 (**
  * Given the table name and key, delete row associated with the key in the
@@ -48,6 +40,8 @@ val get_row: string -> string list -> value list -> key list
  * Return result of Success or Failure
  *)
 val delete_row: string -> key -> result
+
+(*
 
 (**
  * Given the table name, the column name, key, and a new value, update the
@@ -75,6 +69,15 @@ val get_column_vals: string -> string -> (value -> bool) -> result
    - Everything above this comment is used by Operation (or some by JSON).
    - Below that are functions which aren't being used, so they could be
      removed from the .mli file entirely if no one needs them by the end. *)
+
+
+(** ATTTENTION: equivalent to select_from_where; use get_column_names and get_column_vals
+ * Given the table name, a list of the column names, and a list of the
+ * corresponding values, return the keys for all the rows for which the
+ * column values match
+ * If the provided columns and values are empty, return all keys
+ *)
+val get_row: string -> string list -> value list -> key list
 
 
 (**

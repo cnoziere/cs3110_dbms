@@ -8,7 +8,7 @@ open Async.Std
  *)
 type column =
 {
-    mutable data: string Bst.tree;
+    mutable data: value Bst.tree;
     mutable length: int;
 }
 
@@ -144,13 +144,35 @@ let add_row (table_name: string) (cols_to_change: string list)
                     add_cols t) in
             add_cols cols
         else
-            Failure ("Provived columns do not exist in the table " ^ table_name)
+            Failure ("Provided columns do not exist in the table " ^ table_name)
+
+
+let delete_row (table_name: string) (key_to_delete: key): result =
+    match Tst.get table_name db.data with
+    | None -> Failure (table_name ^ " is not a table in the database")
+    | Some table_to_change ->
+        (* Cols is the associative list of col names and columns *)
+        let cols = Tst.list_tst (!table_to_change) in
+        if cols = [] then
+            Failure "Table has no columns"
+        else
+            (* [remove_key] removes the key_to_delete from all columns in cols *)
+            let rec remove_key = function
+            | [] ->
+                (update db.data;
+                Success)
+            | (_, curr_col)::t ->
+                let (x: column) = curr_col in
+                let (removed, new_col) = Bst.remove key_to_delete (x.data) in
+                if removed then
+                    (curr_col.length <- curr_col.length - 1;
+                    curr_col.data <- new_col;
+                    remove_key t)
+                else Failure "Key does not exist" in
+            remove_key cols
 
 
 (*
-let get_row = failwith "TODO"
-
-let delete_row = failwith "TODO"
 
 let update_value = failwith "TODO"
 
@@ -160,6 +182,7 @@ let get_column_vals: string -> string -> (value -> bool) -> result
 
 
 
+let get_row = failwith "TODO"
 
 let get_value_table = failwith "TODO"
 
