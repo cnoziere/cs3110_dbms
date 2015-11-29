@@ -34,7 +34,9 @@ let rec insert (key: string) (item: 'a) (t: 'a tree): (bool * 'a tree) =
             let (flag, new_t) = insert new_key item Leaf in
             (flag, Node (key.[0], None, Leaf, new_t, Leaf)))
     | Node (c, v, t1, t2, t3) ->
-        if (key = Char.escaped c) then
+        if (key = Char.escaped c) && v = None then
+            (false, Node (c, Some item, t1, t2, t3))
+        else if (key = Char.escaped c) then
             (true, Node (c, Some item, t1, t2, t3))
         else if (key.[0] = c) then
             let new_key = String.sub key 1 (String.length key - 1) in
@@ -92,7 +94,7 @@ let rec get (key: string) (t: 'a tree): 'a option =
 
 
 let string_int_option = function
-    | None -> ""
+    | None -> "None"
     | Some v -> string_of_int v
 
 let rec string_int_tst = function
@@ -104,11 +106,22 @@ let rec string_int_tst = function
 
 let print_int_tst (t: int tree): unit = print_endline (string_int_tst t)
 
-let rec print_value_tst = function
-    | Leaf -> ()
-    | Node (c, v, t1, t2, t3) ->
-        print_endline (Char.escaped c ^ "," ^ string_int_option v);
-        print_value_tst t1;
-        print_value_tst t2;
-        print_value_tst t3;
-        ()
+let rec keys_tst = function
+    | Leaf -> []
+    | Node (c, curr_v, t1, t2, t3) ->
+        let rec prepend lst =
+            match lst with
+            | [] -> []
+            | (k, prev_v)::t -> (((Char.escaped c) ^ k), prev_v)::(prepend t) in
+        let split = if curr_v <> None then [(Char.escaped c, curr_v)] else [] in
+        keys_tst t1 @ split @ (prepend (keys_tst t2)) @ keys_tst t3
+
+let rec print_keys = function
+    | [] -> ()
+    | (k, v')::t -> Printf.printf "%s, %s\n" k (string_int_option v'); print_keys t
+
+let list_tst t =
+    let rec strip_option = function
+    | (k, Some x)::xs -> (k, x)::(strip_option xs)
+    | _ -> [] in
+    strip_option (keys_tst t)

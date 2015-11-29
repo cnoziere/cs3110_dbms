@@ -43,6 +43,14 @@ TEST "INSERT_Empty_Key" =
     print_int_tst t;
     not flag
 
+TEST "REMOVE_Key_Reinsert" =
+    print_endline "REMOVE_Key_Reinsert";
+    let t = create () in
+    let (_, t) = insert "hi" 42 t in
+    let (_, t) = remove "hi" t in
+    let (flag, t) = insert "hi" 42 t in
+    not flag
+
 TEST "REMOVE_Char" =
     print_endline "REMOVE_Char";
     let t = create () in
@@ -81,11 +89,33 @@ TEST "GET_Key" =
     print_int_tst t;
     get "hello" t = Some 42
 
-TEST "PRINT_Values" =
-    print_endline "PRINT_Values";
+TEST_UNIT "PRINT_Keys" =
+    print_endline "PRINT_Keys";
     let t = create () in
-    let (_, t) = insert "hello" 42 t in
-    print_int_tst t;
-    let (_, t) = insert "hi" 42 t in
-    print_int_tst t;
-    not flag
+    let (_, t) = insert "a" 1 t in
+    let (_, t) = insert "ab" 2 t in
+    let (_, t) = insert "abs" 3 t in
+    let (_, t) = insert "john" 4 t in
+    let (_, t) = insert "asta" 5 t in
+    let (_, t) = insert "josh" 6 t in
+    let (_, t) = insert "shells" 7 t in
+    let (_, t) = insert "she" 8 t in
+    let (_, t) = insert "sells" 9 t in
+    let (_, t) = insert "sea" 10 t in
+    let (_, t) = insert "seashells" 11 t in
+    let (_, t) = insert "by" 12 t in
+    (*
+    (a, 1)
+    (ab, 2)
+    (abs, 3)
+    (asta, 5)
+    (by, 12)
+    (john, 4)
+    (josh, 6)
+    (sea, 10)
+    (seashells, 11)
+    (sells, 9)
+    (she, 8)
+    (shells, 7)
+    *)
+    print_keys (keys_tst t)

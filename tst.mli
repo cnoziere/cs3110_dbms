@@ -39,11 +39,16 @@ val get: string -> 'a tree -> 'a option
 val print_int_tst: int tree -> unit
 
 (**
- * Convert int tree to string
+ * Return alphabetical list of keys and value options
  *)
-val string_int_tst: int tree -> string
+val keys_tst: 'a tree -> (string * 'a option) list
 
 (**
- * Print tree values only
+ * Return alphabetical list of keys and values
  *)
-val print_value_tst: int tree -> unit
+val list_tst: 'a tree -> (string * 'a) list
+
+(**
+ * Print alphabetical list of keys and values
+ *)
+val print_keys: (string * int option) list -> unit

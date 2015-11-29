@@ -10,7 +10,7 @@ open Async.Std
  * returns a deferred that becomes determined once the database
  * has been modified
  *)
-val updated : unit -> 'a Deferred.t
+val updated : unit -> unit Deferred.t
 
 (**
  * Create table, given the table name and a list of the column names
@@ -27,11 +27,13 @@ val drop_table: string -> result
 (**
  * Add new row to a table, given the table name, a list of the column names,
  * and a list of the respective values to populate the row
- * Values not provided are assigned empty strings
+ * Values for columns not provided are assigned empty strings ("NULL")
  * Return result of Success or Failure
+ * Precondition: string list and value list must be of the same length
  *)
 val add_row: string -> string list -> value list -> result
 
+(*
 (**
  * Given the table name, a list of the column names, and a list of the
  * corresponding values, return the keys for all the rows for which the
@@ -95,3 +97,6 @@ val delete_col: table -> string -> unit
  * Given the table name, return table in the database
  *)
 val get_table: string -> table
+
+
+*)
