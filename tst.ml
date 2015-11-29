@@ -86,9 +86,7 @@ let rec get (key: string) (t: 'a tree): 'a option =
         if (key = Char.escaped c) then v
         else if (key.[0] = c) then
             let new_key = String.sub key 1 (String.length key - 1) in
-            if is_char t1 new_key then get new_key t1
-            else if is_char t2 new_key then get new_key t2
-            else get new_key t3
+            get new_key t2
         else if (key.[0] < c) then get key t1
         else get key t3 (* key.[0] > c *)
 
@@ -105,6 +103,20 @@ let rec string_int_tst = function
         ^ (string_int_tst t3) ^ ")"
 
 let print_int_tst (t: int tree): unit = print_endline (string_int_tst t)
+
+let rec string_a_tst = function
+    | Leaf -> "Leaf"
+    | Node (c, None, t1, t2, t3) ->
+        "Node(\"" ^ (Char.escaped c) ^ "\", None,"
+        ^ (string_a_tst t1) ^ "," ^ (string_a_tst t2) ^ ","
+        ^ (string_a_tst t3) ^ ")"
+    | Node (c, _, t1, t2, t3) ->
+        "Node(\"" ^ (Char.escaped c) ^ "\", Some,"
+        ^ (string_a_tst t1) ^ "," ^ (string_a_tst t2) ^ ","
+        ^ (string_a_tst t3) ^ ")"
+
+let print_a_tst (t: 'a tree): unit = print_endline (string_a_tst t)
+
 
 let rec keys_tst = function
     | Leaf -> []

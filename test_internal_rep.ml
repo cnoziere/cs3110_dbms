@@ -30,6 +30,11 @@ let check_two_vals (ref1: int ref) (val1: int)
     fun () -> return (!ref1, !ref2)) = Core.Std.Result.Ok (val1, val2)
 *)
 
+let rec lists_match x y =
+    match x, y with
+    | h1::t1, h2::t2 -> h1 = h2 && (lists_match t1 t2)
+    | [],[] -> true
+    | _,_ -> false
 
 TEST "CREATE_TABLE_returns_success" =
     print_endline "CREATE_TABLE_returns_success";
@@ -130,10 +135,11 @@ TEST "UPDATE_VALUE_success" =
     | Failure msg -> print_endline msg; false
     | _ -> false
 
-TEST "UPDATE_VALUE_no_key" =
-    print_endline "UPDATE_VALUE_no_key";
-    match update_value "addrow" "age" 8 "19" with
-    | Failure _ -> true
+TEST "UPDATE_VALUE_success_first_col" =
+    print_endline "UPDATE_VALUE_success_first_col";
+    match update_value "addrow" "name" 2 "hello" with
+    | Success -> true
+    | Failure msg -> print_endline msg; false
     | _ -> false
 
 TEST "UPDATE_VALUE_no_key" =
@@ -142,6 +148,33 @@ TEST "UPDATE_VALUE_no_key" =
     | Failure _ -> true
     | _ -> false
 
+TEST "GET_COLUMN_NAMES_return_all" =
+    print_endline "GET_COLUMN_NAMES_return_all";
+    ignore(create_table "getcol" ["name"; "age"]);
+    ignore(add_row "getcol" ["age"] ["5"]);
+    ignore(add_row "getcol" ["name"; "age"] ["asta"; "4"]);
+    ignore(add_row "getcol" ["name"; "age"] ["john"; "10"]);
+    ignore(add_row "getcol" ["name"; "age"] ["max"; "11"]);
+    ignore(add_row "getcol" ["name"] ["kathy"]);
+    ignore(add_row "getcol" ["name"; "age"] ["bob"; "20"]);
+    match get_column_names "getcol" with
+    | ColNames x -> lists_match x [" "; "age"; "name"]
+    | Failure msg -> print_endline msg; false
+    | _ -> false
+
+TEST "GET_COLUMN_VALS_return_all_vals" =
+    print_endline "GET_COLUMN_VALS_return_all_vals";
+    match get_column_vals "getcol" "name" (fun x -> true) with
+    | Column x -> lists_match x [""; "asta"; "john"; "max"; "kathy"; "bob"]
+    | Failure msg -> print_endline msg; false
+    | _ -> false
+
+TEST "GET_COLUMN_VALS_return_equals" =
+    print_endline "GET_COLUMN_VALS_return_equals";
+    match get_column_vals "getcol" "age" (fun x -> x = "11") with
+    | Column x -> lists_match x ["11"]
+    | Failure msg -> print_endline msg; false
+    | _ -> false
 
 
 (* let _ = Scheduler.go () *)

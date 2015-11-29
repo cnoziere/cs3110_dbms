@@ -119,3 +119,13 @@ TEST_UNIT "PRINT_Keys" =
     (shells, 7)
     *)
     print_keys (keys_tst t)
+
+
+TEST "GET_Keys" =
+    print_endline "GET_Keys";
+    let t = create () in
+    let (_, t) = insert "name" 1 t in
+    let (_, t) = insert "age" 2 t in
+    match get "name" t with
+    | None -> false
+    | Some x -> print_int x; true
