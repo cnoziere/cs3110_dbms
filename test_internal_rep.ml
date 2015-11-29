@@ -91,6 +91,8 @@ TEST "ADD_ROW_success" =
 
 TEST "ADD_ROW_partial_list" =
     print_endline "ADD_ROW_partial_list";
+    ignore(add_row "addrow" ["age"] ["5"]);
+    ignore(add_row "addrow" ["name"; "grade"; "age"] ["asta"; "10"; "15"]);
     match add_row "addrow" ["grade"] ["college"] with
     | Success -> true
     | Failure msg -> print_endline msg; false
@@ -98,7 +100,7 @@ TEST "ADD_ROW_partial_list" =
 
 TEST "ADD_ROW_no_table_failure" =
     print_endline "ADD_ROW_no_table_failure";
-    match add_row "notable" ["grade"] ["college"] with
+    match add_row "not_table" ["grade"] ["college"] with
     | Failure _ -> true
     | _ -> false
 
@@ -119,6 +121,19 @@ TEST "DELETE_ROW_failure" =
     print_endline "DELETE_ROW_failure";
     match delete_row "addrow" 5 with
     | Failure "Key does not exist" -> true
+    | _ -> false
+
+TEST "UPDATE_VALUE_success" =
+    print_endline "UPDATE_VALUE_success";
+    match update_value "addrow" "age" 2 "19" with
+    | Success -> true
+    | Failure msg -> print_endline msg; false
+    | _ -> false
+
+TEST "UPDATE_VALUE_no_key" =
+    print_endline "UPDATE_VALUE_no_key";
+    match update_value "addrow" "age" 8 "19" with
+    | Failure _ -> true
     | _ -> false
 
 (* let _ = Scheduler.go () *)

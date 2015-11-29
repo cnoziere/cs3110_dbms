@@ -172,9 +172,23 @@ let delete_row (table_name: string) (key_to_delete: key): result =
             remove_key cols
 
 
-(*
+let update_value (table_name: string) (column_name: string) (key_to_change: key)
+    (value_to_add: value) : result =
+    match Tst.get table_name db.data with
+    | None -> Failure (table_name ^ " is not a table in the database")
+    | Some table_to_change ->
+        match Tst.get column_name (!table_to_change) with
+        | None -> Failure (column_name
+            ^ " is not a column in the table " ^ table_name)
+        | Some column_to_change ->
+            let (updated, new_col) =
+                Bst.insert key_to_change value_to_add column_to_change.data in
+            if updated then
+                (column_to_change.data <- new_col;
+                Success)
+            else Failure "Key does not exist"
 
-let update_value = failwith "TODO"
+(*
 
 let get_column_names: string -> string list
 

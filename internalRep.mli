@@ -41,14 +41,14 @@ val add_row: string -> string list -> value list -> result
  *)
 val delete_row: string -> key -> result
 
-(*
-
 (**
  * Given the table name, the column name, key, and a new value, update the
  * value in table_name at key, col_name
  * Return result of Success or Failure
  *)
 val update_value: string -> string -> key -> value -> result
+
+(*
 
 (**
  * Given the table name, return string list of column names
