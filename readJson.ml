@@ -8,7 +8,7 @@ let rec one_by_one f = function
   | hd :: tl -> (match f hd with
                 | Success -> one_by_one f tl
                 | Failure s -> Failure s
-                | _ -> failwith "no")
+                | _ -> failwith "This should never pattern match")
 
 let to_column jsoncol =
     let open Yojson.Basic.Util in
@@ -47,20 +47,21 @@ let create_full_table json =
     match create_table table_name column_names with
     | Failure s -> Failure s
     | Success -> one_by_one f rows
-    | _ -> failwith "no"
+    | _ -> failwith "This should never pattern match"
 
 let create_database json =
     let open Yojson.Basic.Util in
-    (* let db_name =
+    let db_name =
         json
         |> member "dbName"
-        |> to_string in *)
+        |> to_string in
 
     let tables =
         [json]
         |> filter_member "tables"
         |> flatten in
 
+    InternalRep.set_name db_name;
     one_by_one create_full_table tables
 
 let read_JSON file =
@@ -68,7 +69,7 @@ let read_JSON file =
     try Some (Yojson.Basic.from_file file)
     with _ -> None
   with
-  | None -> Failure ("No such file or directory: " ^ file)
+  | None -> Failure ("No such file: " ^ file)
   | Some json -> create_database json
 
 (* CHECK ALL FAILWITH NOOOOO *)
