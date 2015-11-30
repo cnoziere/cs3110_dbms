@@ -257,11 +257,22 @@ let evaluate input =
 
 (** Functions to print results from evaluation. *)
 
-let print_col col =
-  Format.open_tbox ();
-  let f = fun c -> Format.print_string c; Format.print_tbreak 0 0 in
-  List.iter f col;
-  Format.close_tbox ()
+let cols_to_rows col_list =
+  let f = fun acc c -> match c with
+                       | hd :: tl -> acc @ [hd]
+                       | [] -> failwith "no" in
+
+  let f' = fun c -> match c with
+                     | hd :: tl -> tl
+                     | [] -> failwith "no" in
+
+  let rec helper lst rows =
+  match lst with
+  | [] -> rows
+  | hd :: tl -> if hd = [] then rows
+                else let new_rows = rows @ [List.fold_left f [] lst] in
+                helper (List.map f' lst) new_rows in
+  helper col_list []
 
 let print_cols col_lst = failwith "TODO"
 
