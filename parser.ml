@@ -254,10 +254,36 @@ let evaluate input =
 (** Functions to print results from evaluation. *)
 
 let print_col col =
-Format.printf "@[<v>"
+  Format.open_tbox ();
+  let f = fun c -> Format.print_string c; Format.print_tbreak 0 0 in
+  List.iter f col;
+  Format.close_tbox ()
 
 let print_cols col_lst = failwith "TODO"
 
+(* let pp_tables pp_row fmt (header,table) =
+  (* we build with the largest length of each column of the
+   * table and header *)
+  let widths = Array.create (Array.length table.(0)) 0 in
+  Array.iter (fun row ->
+    Array.iteri (fun j cell ->
+      widths.(j) <- max (String.length cell) widths.(j)
+    ) row
+  ) table;
+  Array.iteri (fun j cell ->
+    widths.(j) <- max (String.length cell) widths.(j)
+  ) header;
+
+  (* open the table box *)
+  Format.pp_open_tbox fmt ();
+
+  (* print the header *)
+  Format.fprintf fmt "%a@\n" (pp_header widths) header;
+  (* print the table *)
+  Array.iter (pp_row fmt) table;
+
+  (* close the box *)
+  Format.pp_close_tbox fmt (); *)
 
 
 
