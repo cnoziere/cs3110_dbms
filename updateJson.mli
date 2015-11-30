@@ -7,10 +7,10 @@ open InternalRep
 val table_to_json: string -> Types.result
 
 (* converts a database into a JSON value *)
-val database_to_json: string -> Yojson.Basic.json
+val database_to_json: unit -> Types.result
 
 (* writes a JSON value to the specified file name *)
-val database_to_file: string -> Types.result
+val database_to_file: unit -> Types.result
 
 (* checks to see if the database has been updated and if so
 writes the database to file *)
