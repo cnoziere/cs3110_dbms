@@ -26,6 +26,7 @@ type table = column Tst.tree ref
  *)
 type database =
 {
+    mutable name: string;
     mutable data: table Tst.tree;
     mutable updated: unit Ivar.t;
 }
@@ -40,6 +41,7 @@ type result = Success | Failure of string | Column of value list
 
 let db: database =
 {
+    name = "default";
     data = Tst.create ();
     updated = Ivar.create ();
 }
@@ -55,6 +57,10 @@ let update (data: table Tst.tree) =
     db.updated <- Ivar.create ()
 
 let updated () = Ivar.read (db.updated)
+
+let get_name () = db.name
+
+let set_name (new_name: string): unit = db.name <- new_name
 
 let create_table (table_name: string) (col_names: string list): result =
     if col_names = [] then Failure ("No column names are provided to " ^
@@ -83,6 +89,14 @@ let create_table (table_name: string) (col_names: string list): result =
                 add_cols t) in
     add_cols col_names
 
+
+let get_table_names () : string list =
+    let rec get_names = function
+    | [] -> []
+    | (name,_)::t -> name::get_names t in
+    get_names (Tst.list_tst db.data)
+
+
 let drop_table (dropped: string): result =
     let (success, new_db) = Tst.remove dropped db.data in
     if success then
@@ -91,12 +105,6 @@ let drop_table (dropped: string): result =
     else
         Failure (dropped ^ " is not a table in the database")
 
-(**
- * Add new row to a table, given the table name, a list of the column names,
- * and a list of the respective values to populate the row
- * Values not provided are assigned empty strings
- * Return result of Success or Failure
- *)
 
 (* Returns true if all items in sublst are a member of assoc_lst *)
 let rec all_mem (sublst: 'a list) (assoc_lst: ('a * 'b) list): bool =

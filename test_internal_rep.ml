@@ -197,5 +197,9 @@ TEST "GET_VALUES_success" =
     | Failure msg -> print_endline msg; false
     | _ -> false
 
+TEST "GET_TABLE_NAMES_success" =
+    print_endline "GET_TABLE_NAMES_success";
+    lists_match (get_table_names ()) ["addrow"; "b"; "getcol"; "test"]
+
 
 (* let _ = Scheduler.go () *)

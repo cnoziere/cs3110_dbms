@@ -10,7 +10,17 @@ open Async.Std
  * returns a deferred that becomes determined once the database
  * has been modified
  *)
-val updated : unit -> unit Deferred.t
+val updated: unit -> unit Deferred.t
+
+(**
+ * Get name of current database
+ *)
+val get_name: unit -> string
+
+(**
+ * Set name of current database
+ *)
+val set_name: string -> unit
 
 (**
  * Create table, given the table name and a list of the column names
@@ -23,6 +33,11 @@ val create_table: string -> string list -> result
  * Return result of Success or Failure
  *)
 val drop_table: string -> result
+
+(**
+ * Set names of all tables in current database
+ *)
+val get_table_names: unit -> string list
 
 (**
  * Add new row to a table, given the table name, a list of the column names,
