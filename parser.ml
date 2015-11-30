@@ -17,7 +17,7 @@ let help params = match params with
 
 let load params = match params with
   | [] -> PFailure("Error LOAD: no filename.")
-  | h::[] -> Failure("todo: ReadJson.read_JSON h "^h)
+  | h::[] -> ReadJson.read_JSON h
   | _ -> PFailure("Error LOAD: too many parameters.")
 
 let create_table params = match params with
