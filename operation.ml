@@ -128,6 +128,10 @@ let select tname col_names where =
           | _ -> Failure("Will not reach this case."))
     | _ -> Failure("Will not reach this case.")
 
+(**
+ * Given a table name, returns result Failure if table doesn't exist, or
+ * OpColumn of all columns.
+ *)
 let get_table tname =
     let col_names = InternalRep.get_column_names tname in
     match col_names with

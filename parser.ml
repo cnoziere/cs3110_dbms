@@ -224,6 +224,9 @@ let select params =
         PFailure("Error SELECT: invalid tablename parameters.")
     | xs -> parse_lists xs
 
+(**
+ * Gets an entire table as an OpColumn result, to be printed by print_result.
+ *)
 let print name = match name with
   | h::[] -> Failure("Operation.get_table h")
   | _ -> PFailure("Error PRINT: Too many parameters.")
