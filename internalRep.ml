@@ -236,12 +236,28 @@ let get_row (table_name: string) (column_name: string)
             Keys (check_keys (Bst.list_bst selected_col.data))
 
 
-(**
-* Given the table name, the column name, and a list of keys, return the values
-* in the column corresponding to the keys
-*)
-let get_values (table_name: string) (column_name: string) (keys: key list): result =
+exception Key_not_found of key
 
+let get_values (table_name: string) (column_name: string) (keys: key list): result =
+    match Tst.get table_name db.data with
+    | None -> Failure (table_name ^ " is not a table in the database")
+    | Some selected_table ->
+        match Tst.get column_name (!selected_table) with
+        | None -> Failure (column_name
+            ^ " is not a column in the table " ^ table_name)
+        | Some selected_col ->
+            (* extract list of values from list of keys *)
+            let rec get_vals = function
+            | [] -> []
+            | k::t ->
+                (match Bst.get k selected_col.data with
+                | Some v -> v::get_vals t
+                | None -> raise (Key_not_found k)) in
+            try
+                Column (get_vals keys)
+            with
+                | Key_not_found k -> (Failure ("The key " ^ string_of_int k
+                    ^ " does not exist in the table " ^ table_name))
 
 
 

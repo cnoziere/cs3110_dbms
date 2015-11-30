@@ -36,6 +36,9 @@ let rec lists_match x y =
     | [],[] -> true
     | _,_ -> false
 
+let print_string_list = List.iter print_endline
+
+
 TEST "CREATE_TABLE_returns_success" =
     print_endline "CREATE_TABLE_returns_success";
     match create_table "test" ["a"; "b"; "c"] with
@@ -180,6 +183,17 @@ TEST "GET_ROW_returns_all_keys" =
     print_endline "GET_ROW_returns_all_keys";
     match get_row "getcol" "age" (fun x -> x = "11" || x = "10") with
     | Keys x -> lists_match x [2;3]
+    | Failure msg -> print_endline msg; false
+    | _ -> false
+
+TEST "GET_VALUES_success" =
+    print_endline "GET_ROW_returns_all_keys";
+    match get_row "getcol" "age" (fun x -> x = "11" || x = "10") with
+    | Keys keys ->
+        (match get_values "getcol" "age" keys with
+        | Column vals -> lists_match vals ["10";"11"]
+        | Failure msg -> print_endline msg; false
+        | _ -> false)
     | Failure msg -> print_endline msg; false
     | _ -> false
 
