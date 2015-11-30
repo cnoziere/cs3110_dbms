@@ -14,4 +14,4 @@ val database_to_file: string -> Types.result
 
 (* checks to see if the database has been updated and if so
 writes the database to file *)
-val watch_for_update: string -> unit
+val watch_for_update: unit -> unit

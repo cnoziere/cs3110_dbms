@@ -219,7 +219,13 @@ let evaluate input =
 
 (** Functions to print results from evaluation. *)
 
+let print_col col =
+Format.printf "@[<v>
+
 let print_cols col_lst = failwith "TODO"
+
+
+
 
 let print_result res = match res with
   | Success -> Printf.printf "%s\n" "Success"

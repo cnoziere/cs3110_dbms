@@ -62,6 +62,15 @@ let database_to_file (dbname : string) =
 
 (* checks to see if the database has been updated and if so
 writes the database to file *)
-let watch_for_update d = failwith "TODO"
-  (* upon (Ivar.read d) (fun d' -> watch_for_update d';
+let watch_for_update () = failwith "TODO"
+  (* let (update, dbname) = updated () in
+  upon (update) (fun _ -> watch_for_update ();
+  match database_to_file dbname with
+  | Success -> ()
+  | _ -> failwith ("Cannot write database " ^ dbname ^ " to file")) *)
+
+  (* let watch_for_update d = failwith "TODO"
+     upon (Ivar.read d) (fun d' -> watch_for_update d';
     (database_to_file d)) *)
+
+(* WHAT SHOULD RETURN TYPE OF WATCH_FOR_UPDATE BE? *)
