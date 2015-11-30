@@ -15,6 +15,7 @@ let is_database_result res = match res with
   | Failure _ -> true
   | _ -> true
 
+
 TEST "EXIT invalid" =
   is_parser_fail (fst (Parser.evaluate "EXIT extra params"))
 
@@ -192,12 +193,7 @@ TEST "SELECT FROM valid lowercase" =
   is_database_result (fst (Parser.evaluate "select (col1,col2) from tname"))
 
 
-(*
-TEST "SELECT FROM invalid no commas" =
-  is_parser_fail (fst (Parser.evaluate
-    "SELECT col1 col2 FROM tname WHERE col='val'"))
-
-TEST "SELECT FROM invalid missing params" =
+TEST "SELECT FROM WHERE invalid no where conditions" =
   is_parser_fail (fst (Parser.evaluate "SELECT * FROM tname WHERE"))
 
 TEST "SELECT FROM invalid too many params" =
@@ -225,26 +221,50 @@ TEST "SELECT FROM WHERE equals" =
   is_database_result (fst (Parser.evaluate
     "SELECT * FROM tname WHERE col='val'"))
 
-TEST "SELECT FROM WHERE mot equals" =
+TEST "SELECT FROM WHERE equals" =
+  is_database_result (fst (Parser.evaluate
+    "SELECT col1,col2,col3 FROM tname WHERE col='val'"))
+
+TEST "SELECT FROM WHERE not equals" =
   is_database_result (fst (Parser.evaluate
     "SELECT * FROM tname WHERE col<>'val'"))
+
+TEST "SELECT FROM WHERE not equals" =
+  is_database_result (fst (Parser.evaluate
+    "SELECT col1,col2,col3 FROM tname WHERE col<>'val'"))
 
 TEST "SELECT FROM WHERE greater than" =
   is_database_result (fst (Parser.evaluate
     "SELECT * FROM tname WHERE col>'val'"))
 
+TEST "SELECT FROM WHERE greater than" =
+  is_database_result (fst (Parser.evaluate
+    "SELECT col1,col2,col3 FROM tname WHERE col>'val'"))
+
 TEST "SELECT FROM WHERE less than" =
   is_database_result (fst (Parser.evaluate
     "SELECT * FROM tname WHERE col<'val'"))
+
+TEST "SELECT FROM WHERE less than" =
+  is_database_result (fst (Parser.evaluate
+    "SELECT col1,col2,col3 FROM tname WHERE col<'val'"))
 
 TEST "SELECT FROM WHERE greater than equal to" =
   is_database_result (fst (Parser.evaluate
     "SELECT * FROM tname WHERE col>='val'"))
 
+TEST "SELECT FROM WHERE greater than equal to" =
+  is_database_result (fst (Parser.evaluate
+    "SELECT col1,col2,col3 FROM tname WHERE col>='val'"))
+
 TEST "SELECT FROM WHERE less than equal to" =
   is_database_result (fst (Parser.evaluate
     "SELECT * FROM tname WHERE col<='val'"))
-*)
+
+TEST "SELECT FROM WHERE less than equal to" =
+  is_database_result (fst (Parser.evaluate
+    "SELECT col1,col2,col3 FROM tname WHERE col<='val'"))
+
 
 TEST_UNIT "print Success" = Parser.print_result Success
 TEST_UNIT "print Failure empty" = Parser.print_result (Failure "")

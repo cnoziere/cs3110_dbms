@@ -41,9 +41,9 @@ let insert_into params =
     | [] -> (cols, vals)
     | h::t when is_before -> begin
         if (String.lowercase h)="values" then split_lists t false cols vals
-        else split_lists t true (h::cols) vals
+        else split_lists t true (cols@[h]) vals
       end
-    | h::t -> split_lists t false cols (h::vals) in
+    | h::t -> split_lists t false cols (vals@[h]) in
   match params with
     | [] -> PFailure("Error INSERT INTO: no tablename.")
     | h::[] -> PFailure("Error INSERT INTO: no columns or values.")
@@ -55,23 +55,45 @@ let insert_into params =
         else if vals=[] then PFailure("Error INSERT INTO: no values.")
         else if (List.length cols)<>(List.length vals) then
           PFailure("Error INSERT INTO: number of columns does not match values.")
-        else Failure("todo: Operation.add_row h (fst lists) (snd lists) "^h^" "^ (List.hd cols)^" "^(List.hd vals))
+        else Failure("todo: Operation.add_row h cols vals "^h^" "^ (List.hd cols)^" "^(List.hd vals))
       end
 
-(** Helper function for [delete_from] and [update]. *)
-type where = NoSpec | Invalid | Valid of string*string
+(**
+ * Helper function to parse WHERE statements.
+ * Expects everything after the keyword WHERE.
+ * Returns None for invalid forms, Some (col_name, op, value)
+ *)
 let parse_where lst =
-  if lst=[] then NoSpec else
+  if lst=[] then None else
   let param_str = String.concat "" lst in
-  let to_match  = Str.regexp "\\([A-Za-z0-9]+='[A-Za-z0-9 ]+'\\)" in
-  if Str.string_match to_match param_str 0 then begin
-    let to_remove = Str.regexp "\\('\\)" in
-    let no_quotes = Str.global_replace to_remove "" param_str in
-    let split_on = Str.regexp "\\(=\\)" in
-    let final_list = Str.split split_on no_quotes in
-    Valid(List.nth final_list 0, List.nth final_list 1)
-    end
-  else Invalid
+  let no_quotes = Str.global_replace (Str.regexp "\\('\\)") "" param_str in
+
+  let eq  =   Str.regexp ("\\([A-Za-z0-9]+='[A-Za-z0-9]+'\\)" ^ "$") in
+  let noteq = Str.regexp ("\\([A-Za-z0-9]+<>'[A-Za-z0-9]+'\\)" ^ "$") in
+  let gt =    Str.regexp ("\\([A-Za-z0-9]+>'[A-Za-z0-9]+'\\)" ^ "$") in
+  let lt =    Str.regexp ("\\([A-Za-z0-9]+<'[A-Za-z0-9]+'\\)" ^ "$") in
+  let gteq =  Str.regexp ("\\([A-Za-z0-9]+>='[A-Za-z0-9]+'\\)" ^ "$") in
+  let lteq =  Str.regexp ("\\([A-Za-z0-9]+<='[A-Za-z0-9]+'\\)" ^ "$") in
+
+  if Str.string_match eq param_str 0 then
+    let strs = Str.split (Str.regexp "\\(=\\)") no_quotes in
+    Some(List.nth strs 0, Eq, List.nth strs 1)
+  else if Str.string_match noteq param_str 0 then
+    let strs = Str.split (Str.regexp "\\(<>\\)") no_quotes in
+    Some(List.nth strs 0, NotEq, List.nth strs 1)
+  else if Str.string_match gt param_str 0 then
+    let strs = Str.split (Str.regexp "\\(>\\)") no_quotes in
+    Some(List.nth strs 0, Gt, List.nth strs 1)
+  else if Str.string_match lt param_str 0 then
+    let strs = Str.split (Str.regexp "\\(<\\)") no_quotes in
+    Some(List.nth strs 0, Lt, List.nth strs 1)
+  else if Str.string_match gteq param_str 0 then
+    let strs = Str.split (Str.regexp "\\(>=\\)") no_quotes in
+    Some(List.nth strs 0, GtEq, List.nth strs 1)
+  else if Str.string_match lteq param_str 0 then
+    let strs = Str.split (Str.regexp "\\(<=\\)") no_quotes in
+    Some(List.nth strs 0, LtEq, List.nth strs 1)
+  else None
 
 (**
  * First match "DELETE FROM tablename" and "DELETE * FROM tablename" formats.
@@ -86,11 +108,10 @@ let delete_from params =
     | h::ha::[] when (String.lowercase ha)="where" ->
         PFailure("Error DELETE FROM: no WHERE conditions.")
     | h::ha::t when (String.lowercase ha)="where" -> begin
-        let parsed_where = parse_where t in
-        (match parsed_where with
-          | NoSpec -> Failure("todo: Operation.delete_row h None "^h)
-          | Invalid -> PFailure("Error DELETE FROM: invalid WHERE conditions.")
-          | Valid(f,s) -> Failure("todo: Operation.delete_row h Some(f,s) "^h^" "^f^ " "^s)
+        let where = parse_where t in
+        (match where with
+          | None -> PFailure("Error DELETE FROM: invalid WHERE conditions.")
+          | Some(c,o,v) -> Failure("todo: Operation.delete_row h Some(c,o,v) "^h^" "^c^ " "^v)
         )
       end
     | _ -> PFailure("Error DELETE FROM: parameters must match [tablename WHERE].") in
@@ -116,9 +137,9 @@ let update params =
     | [] -> (pairs, where)
     | h::t when is_before -> begin
         if (String.lowercase h)="where" then split_lists t false pairs where
-        else split_lists t true (h::pairs) where
+        else split_lists t true (pairs@[h]) where
       end
-    | h::t -> split_lists t false pairs (h::where) in
+    | h::t -> split_lists t false pairs (where@[h]) in
   let split_set set =
     let match_fst = Str.regexp "\\([A-Za-z0-9]+=\\)" in
     let match_snd = Str.regexp "\\(='[A-Za-z0-9]+'\\)" in
@@ -145,19 +166,18 @@ let update params =
     | h::ha::t when (String.lowercase ha)="set"->
         let lists = split_lists t true [] [] in
         let set = fst lists in
-        let where = snd lists in
+        let after_where = snd lists in
         let parsed_set = split_set set in
         let new_cols = fst parsed_set in
         let new_vals = snd parsed_set in
-        let parsed_where = parse_where where in
+        let where = parse_where after_where in
         if new_cols=[] then PFailure("Error UPDATE: invalid SET")
         else if new_vals=[] then PFailure("Error UPDATE: invalid SET")
         else if (List.length new_cols)<>(List.length new_vals) then
           PFailure("Error UPDATE: invalid SET")
-        else (match parsed_where with
-          | NoSpec -> Failure("todo: Operation.update h new_cols new_vals None "^h^" "^(List.hd new_cols)^" "^(List.hd new_vals))
-          | Invalid -> PFailure("Error UPDATE: invalid WHERE")
-          | Valid(f,s) -> Failure("todo: Operation.update h new_cols new_vals Some(f,s) "^h^" "^(List.hd new_cols)^" "^(List.hd new_vals)^" "^f^" "^s)
+        else (match where with
+          | None -> PFailure("Error UPDATE: invalid WHERE")
+          | Some(c,o,v) -> Failure("todo: Operation.update h new_cols new_vals Some(c,o,v) "^h^" "^(List.hd new_cols)^" "^(List.hd new_vals)^" "^c^" "^v)
         )
     | h::t -> PFailure("Error UPDATE: must match SET and WHERE.")
 
@@ -173,24 +193,33 @@ let select params =
     | [] -> (cols, tname)
     | h::t when is_before -> begin
         if (String.lowercase h)="from" then split_lists t false cols tname
-        else split_lists t true (h::cols) tname
+        else split_lists t true (cols@[h]) tname
       end
-    | h::t -> split_lists t false cols (h::tname) in
-  let parse_lists params = match params with
-    | xs -> begin
-        let lists = split_lists xs true [] [] in
-        let col = fst lists in
-        let tname = snd lists in
-        if tname=[] then PFailure("Error SELECT: no tablename.")
-        else if (List.length tname)>1 then
-          PFailure("Error SELECT: too many tablename parameters.")
-        else if col=[] then PFailure("Error SELECT: no column names.")
-        else Failure("todo: Operation.select_from col (List.hd tname) "^(List.hd col)^" "^(List.hd tname))
-      end in
+    | h::t -> split_lists t false cols (tname@[h]) in
+  let parse_lists params =
+    let lists = split_lists params true [] [] in
+    let col = fst lists in
+    let tname = snd lists in
+    if col=[] then PFailure("Error SELECT: no column names.") else
+    (match tname with
+      | [] -> PFailure("Error SELECT: no tablename.")
+      | h::[] -> Failure("todo: Operation.select h Some(col) None "^h^" "^(List.hd col))
+      | h::ha::t when (String.lowercase ha)="where" ->
+          (let where = parse_where t in
+          (match where with
+            | None -> PFailure("Error SELECT: invalid WHERE conditions.")
+            | Some(c,o,v) -> Failure("todo: Operation.select h Some(col) Some(c,o,v) "^h^" "^(List.hd col)^" "^c^" "^v)
+          ))
+      | _ -> PFailure("Error SELECT: too many tablename parameters.")) in
   match params with
     | [] -> PFailure("Error SELECT: no columns or values.")
     | h::ha::hb::[] when h="*"&&(String.lowercase ha)="from" ->
-        Failure("todo: Operation.select_from col None hb "^hb)
+        Failure("todo: Operation.select hb None None "^hb)
+    | h::ha::hb::hc::t when h="*"&&(String.lowercase ha)="from"&&(String.lowercase hc)="where" ->
+        let where = parse_where t in
+        (match where with
+          | None -> PFailure("Error SELECT: invalid WHERE conditions.")
+          | Some(c,o,v) -> Failure("todo: Operation.select hb None Some(c,o,v) "^hb^" "^c^" "^v))
     | h::ha::t when h="*"&&(String.lowercase ha)="from" ->
         PFailure("Error SELECT: invalid tablename parameters.")
     | xs -> parse_lists xs
@@ -220,7 +249,7 @@ let evaluate input =
 (** Functions to print results from evaluation. *)
 
 let print_col col =
-Format.printf "@[<v>
+Format.printf "@[<v>"
 
 let print_cols col_lst = failwith "TODO"
 
