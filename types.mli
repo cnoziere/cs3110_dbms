@@ -1,4 +1,3 @@
-open Tree
 open Async.Std
 
 (**
