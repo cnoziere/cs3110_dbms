@@ -42,6 +42,12 @@ val update : string -> string list -> value list ->
 val select : string -> string list option -> (string * op * value) option -> result
 
 (**
+ * Given a table name, returns result Failure if table doesn't exist, or
+ * OpColumn of all columns.
+ *)
+val get_table : string -> result
+
+(**
  * Helper functions. [check_failures] is for [delete_row] and [update].
  * [filter_columns] used by [select_from] and [select_from_where].
  *)

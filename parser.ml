@@ -224,6 +224,10 @@ let select params =
         PFailure("Error SELECT: invalid tablename parameters.")
     | xs -> parse_lists xs
 
+let print name = match name with
+  | h::[] -> Failure("Operation.get_table h")
+  | _ -> PFailure("Error PRINT: Too many parameters.")
+
 (**
  * Main function for parsing user input and evaluation.
  * All keywords are case insensitive.
@@ -244,6 +248,7 @@ let evaluate input =
     | h::t when (String.lowercase h)="delete" -> (delete_from t, true)
     | h::t when (String.lowercase h)="update" -> (update t, true)
     | h::t when (String.lowercase h)="select" -> (select t, true)
+    | h::t when (String.lowercase h)="print" -> (print t, true)
     | _ -> (PFailure("Error: command not recognized."), true)
 
 (** Functions to print results from evaluation. *)

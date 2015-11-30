@@ -118,3 +118,12 @@ let select tname col_names where =
         let results = List.map (fun x -> InternalRep.get_column_vals tname x f) c in (* another col name... *)
         filter_columns results
     | _ -> Failure("Will not reach this case.")
+
+let get_table tname =
+    let col_names = InternalRep.get_column_names tname in
+    match col_names with
+      | Failure x -> Failure x
+      | ColNames lst ->
+          let results = List.map (fun x -> InternalRep.get_column_vals tname x (fun y -> true)) lst in
+          filter_columns results
+      | _ -> Failure("Will not reach this case.")

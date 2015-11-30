@@ -266,6 +266,16 @@ TEST "SELECT FROM WHERE less than equal to" =
     "SELECT col1,col2,col3 FROM tname WHERE col<='val'"))
 
 
+TEST "PRINT invalid too many params" =
+  is_parser_fail (fst (Parser.evaluate "PRINT tname extras"))
+
+TEST "PRINT valid" =
+  is_database_result (fst (Parser.evaluate "PRINT tname"))
+
+TEST "PRINT valid lowercase" =
+  is_database_result (fst (Parser.evaluate "print tname"))
+
+
 TEST_UNIT "print Success" = Parser.print_result Success
 TEST_UNIT "print Failure empty" = Parser.print_result (Failure "")
 TEST_UNIT "print Failure" = Parser.print_result (Failure "x")
@@ -274,7 +284,4 @@ TEST_UNIT "print PMessage" = Parser.print_result (PMessage "x")
 TEST_UNIT "print PFailure" = Parser.print_result (PFailure "")
 TEST_UNIT "print PFailure" = Parser.print_result (PFailure "x")
 
-(*
-TEST_UNIT "print OpColumn" = failwith "TODO"
-TEST_UNIT "print entire table" = failwith "TODO"
-*)
+(* TEST_UNIT "print OpColumn" *)
