@@ -38,6 +38,22 @@ let rec lists_match x y =
 
 let print_string_list = List.iter print_endline
 
+let print_table (table_name: string) =
+    match get_column_names table_name with
+    | ColNames col_names ->
+        let rec print_column = function
+        | [] -> ()
+        | col_name::t ->
+            Printf.printf "COLUMN: %s\n" col_name;
+            (match get_column_vals table_name col_name (fun x -> true) with
+            | Column x -> print_string_list x
+            | Failure msg -> print_endline msg
+            | _ -> print_endline "Error 1");
+            print_column t in
+        print_column col_names
+    | Failure msg -> print_endline msg
+    | _ -> print_endline "Error 2"
+
 
 TEST "CREATE_TABLE_returns_success" =
     print_endline "CREATE_TABLE_returns_success";
@@ -179,10 +195,17 @@ TEST "GET_COLUMN_VALS_return_equals" =
     | Failure msg -> print_endline msg; false
     | _ -> false
 
-TEST "GET_ROW_returns_all_keys" =
-    print_endline "GET_ROW_returns_all_keys";
+TEST "GET_ROW_returns_all_keys_age" =
+    print_endline "GET_ROW_returns_all_keys_age";
     match get_row "getcol" "age" (fun x -> x = "11" || x = "10") with
     | Keys x -> lists_match x [2;3]
+    | Failure msg -> print_endline msg; false
+    | _ -> false
+
+TEST "GET_ROW_returns_all_keys" =
+    print_endline "GET_ROW_returns_all_keys";
+    match get_row "getcol" "" (fun x -> true) with
+    | Keys x -> lists_match x [0;1;2;3;4;5]
     | Failure msg -> print_endline msg; false
     | _ -> false
 
@@ -200,6 +223,13 @@ TEST "GET_VALUES_success" =
 TEST "GET_TABLE_NAMES_success" =
     print_endline "GET_TABLE_NAMES_success";
     lists_match (get_table_names ()) ["addrow"; "b"; "getcol"; "test"]
+
+TEST_UNIT "PRINT_TABLE" =
+    print_endline "PRINT_TABLE";
+    print_table "getcol";
+    ignore (update_value "getcol" "age" 4 "15");
+    ignore (update_value "getcol" "name" 0 "test");
+    print_table "getcol"
 
 
 (* let _ = Scheduler.go () *)

@@ -85,7 +85,7 @@ let create_table (table_name: string) (col_names: string list): result =
     add_cols col_names
 
 
-let get_table_names () : string list =
+let get_table_names (): string list =
     let rec get_names = function
     | [] -> []
     | (name,_)::t -> name::get_names t in
@@ -223,22 +223,30 @@ let get_column_vals (table_name: string) (column_name: string)
             | [] -> [] in
             Column (check_vals (Bst.list_bst selected_col.data))
 
+exception Empty_table
 
 let get_row (table_name: string) (column_name: string)
     (to_add: value -> bool): result =
     match Tst.get table_name db.data with
     | None -> Failure (table_name ^ " is not a table in the database")
     | Some selected_table ->
-        match Tst.get column_name (!selected_table) with
-        | None -> Failure (column_name
-            ^ " is not a column in the table " ^ table_name)
-        | Some selected_col ->
-            (* extract list of valid keys from list of keys and values *)
-            let rec check_keys = function
-            | (k,v)::t -> if to_add v then k::check_keys t else check_keys t
-            | [] -> [] in
-            Keys (check_keys (Bst.list_bst selected_col.data))
-
+        try
+            let column_name = if column_name = "" then
+                match Tst.list_tst (!selected_table) with
+                | [] -> raise Empty_table (* Not possible due to parser check *)
+                | (x,_)::t -> x
+            else column_name in
+            match Tst.get column_name (!selected_table) with
+            | None -> Failure (column_name
+                ^ " is not a column in the table " ^ table_name)
+            | Some selected_col ->
+                (* extract list of valid keys from list of keys and values *)
+                let rec check_keys = function
+                | (k,v)::t -> if to_add v then k::check_keys t else check_keys t
+                | [] -> [] in
+                Keys (check_keys (Bst.list_bst selected_col.data))
+        with
+        | Empty_table -> Failure (table_name ^ " has no columns")
 
 exception Key_not_found of key
 

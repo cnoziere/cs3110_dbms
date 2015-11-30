@@ -17,17 +17,17 @@ let help params = match params with
 
 let load params = match params with
   | [] -> PFailure("Error LOAD: no filename.")
-  | h::[] -> Failure("todo: ReadJson.read_JSON h "^h)
+  | h::[] -> ReadJson.read_JSON h
   | _ -> PFailure("Error LOAD: too many parameters.")
 
 let create_table params = match params with
   | [] -> PFailure("Error CREATE TABLE: no table name.")
   | h::[] -> PFailure("Error CREATE TABLE: no column names.")
-  | h::t -> Failure("todo: Operation.create_table h t "^h^" "^(List.hd t))
+  | h::t -> Operation.create_table h t
 
 let drop_table params = match params with
   | [] -> PFailure("Error DROP TABLE: no tablename.")
-  | h::[] -> Failure("todo: Operation.drop_table h "^h)
+  | h::[] -> Operation.drop_table h
   | _ -> PFailure("Error DROP TABLE: too many parameters.")
 
 (**
@@ -55,7 +55,7 @@ let insert_into params =
         else if vals=[] then PFailure("Error INSERT INTO: no values.")
         else if (List.length cols)<>(List.length vals) then
           PFailure("Error INSERT INTO: number of columns does not match values.")
-        else Failure("todo: Operation.add_row h cols vals "^h^" "^ (List.hd cols)^" "^(List.hd vals))
+        else Operation.add_row h cols vals
       end
 
 (**
@@ -111,13 +111,13 @@ let delete_from params =
         let where = parse_where t in
         (match where with
           | None -> PFailure("Error DELETE FROM: invalid WHERE conditions.")
-          | Some(c,o,v) -> Failure("todo: Operation.delete_row h Some(c,o,v) "^h^" "^c^ " "^v)
+          | Some(c,o,v) -> Operation.delete_row h (Some(c,o,v))
         )
       end
     | _ -> PFailure("Error DELETE FROM: parameters must match [tablename WHERE].") in
   match params with
     | h::ha::hb::[] when h="*"&&(String.lowercase ha)="from" ->
-        Failure("todo: Operation.delete_row hb None "^hb)
+        Operation.delete_row hb None
     | h::ha::t when h="*"&&(String.lowercase ha)="from" ->
         PFailure("Error DELETE FROM: too many tablename parameters.")
     | h::t when (String.lowercase h)="from" -> parse_from t
@@ -177,7 +177,7 @@ let update params =
           PFailure("Error UPDATE: invalid SET")
         else (match where with
           | None -> PFailure("Error UPDATE: invalid WHERE")
-          | Some(c,o,v) -> Failure("todo: Operation.update h new_cols new_vals Some(c,o,v) "^h^" "^(List.hd new_cols)^" "^(List.hd new_vals)^" "^c^" "^v)
+          | Some(c,o,v) -> Operation.update h new_cols new_vals (Some(c,o,v))
         )
     | h::t -> PFailure("Error UPDATE: must match SET and WHERE.")
 
@@ -203,30 +203,34 @@ let select params =
     if col=[] then PFailure("Error SELECT: no column names.") else
     (match tname with
       | [] -> PFailure("Error SELECT: no tablename.")
-      | h::[] -> Failure("todo: Operation.select h Some(col) None "^h^" "^(List.hd col))
+      | h::[] -> Operation.select h (Some(col)) None
       | h::ha::t when (String.lowercase ha)="where" ->
           (let where = parse_where t in
           (match where with
             | None -> PFailure("Error SELECT: invalid WHERE conditions.")
-            | Some(c,o,v) -> Failure("todo: Operation.select h Some(col) Some(c,o,v) "^h^" "^(List.hd col)^" "^c^" "^v)
+            | Some(c,o,v) -> Operation.select h (Some(col)) (Some(c,o,v))
           ))
       | _ -> PFailure("Error SELECT: too many tablename parameters.")) in
   match params with
     | [] -> PFailure("Error SELECT: no columns or values.")
     | h::ha::hb::[] when h="*"&&(String.lowercase ha)="from" ->
-        Failure("todo: Operation.select hb None None "^hb)
+        Operation.select hb None None
     | h::ha::hb::hc::t when h="*"&&(String.lowercase ha)="from"&&(String.lowercase hc)="where" ->
         let where = parse_where t in
         (match where with
           | None -> PFailure("Error SELECT: invalid WHERE conditions.")
-          | Some(c,o,v) -> Failure("todo: Operation.select hb None Some(c,o,v) "^hb^" "^c^" "^v))
+          | Some(c,o,v) -> Operation.select hb None (Some(c,o,v)))
     | h::ha::t when h="*"&&(String.lowercase ha)="from" ->
         PFailure("Error SELECT: invalid tablename parameters.")
     | xs -> parse_lists xs
 
+(**
+ * Gets an entire table as an OpColumn result, to be printed by print_result.
+ *)
 let print name = match name with
+  | [] -> PFailure("Error PRINT: no table name.")
   | h::[] -> Failure("Operation.get_table h")
-  | _ -> PFailure("Error PRINT: Too many parameters.")
+  | _ -> PFailure("Error PRINT: too many parameters.")
 
 (**
  * Main function for parsing user input and evaluation.

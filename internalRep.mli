@@ -79,6 +79,7 @@ val get_column_vals: string -> string -> (value -> bool) -> result
 (**
  * Given the table name, the column name, and a function (value -> bool), return
  * the keys for all values that satisfy the function
+ * Given an empty column name "", [get_row] returns all keys
  *)
 val get_row: string -> string -> (value -> bool) -> result
 
@@ -87,15 +88,3 @@ val get_row: string -> string -> (value -> bool) -> result
  * in the column corresponding to the keys
  *)
 val get_values: string -> string -> key list -> result
-
-
-(*
-
-NOT NECESSARY?
-
-(**
- * Given the table and column name, delete column
- *)
-val delete_col: table -> string -> unit
-
-*)
