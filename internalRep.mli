@@ -67,15 +67,16 @@ val get_column_vals: string -> string -> (value -> bool) -> result
  *)
 val get_row: string -> string -> (value -> bool) -> result
 
+(**
+ * Given the table name, the column name, and a list of keys, return the values
+ * in the column corresponding to the keys
+ *)
+val get_values: string -> string -> key list -> result
+
+
 (*
 
 NOT NECESSARY?
-
-(**
- * Given the table, the column name, and key, return the value in table at
- * key, col_name
- *)
-val get_value_table: table -> string -> key -> value
 
 (**
  * Given the table and column name, delete column

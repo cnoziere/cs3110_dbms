@@ -236,11 +236,18 @@ let get_row (table_name: string) (column_name: string)
             Keys (check_keys (Bst.list_bst selected_col.data))
 
 
+(**
+* Given the table name, the column name, and a list of keys, return the values
+* in the column corresponding to the keys
+*)
+let get_values (table_name: string) (column_name: string) (keys: key list): result =
+
+
+
+
 (*
 
 NOT NECESSARY?
-
-let get_value_table = failwith "TODO"
 
 let delete_col = failwith "TODO"
 
