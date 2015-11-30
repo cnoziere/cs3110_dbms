@@ -42,18 +42,29 @@ let drop_table tname = InternalRep.drop_table tname
 let add_row tname col_names vals = InternalRep.add_row tname col_names vals
 
 (**
- * Deletes a row from a table, given the table name, and a list of
- * (column name, value) pairs to identify the target rows.
+ * Deletes a row from a table, given the table name, and a None if no where
+ * conditions, or column name, operator, value triple
  * Returns a result of Success if all deletions succeed. If any fail, returns
  * a result of Failure containing messages from all failures.
  *)
-let delete_row tname row_id =
-  let delete_list keys =
-    let results = List.map (fun x -> InternalRep.delete_row tname x) keys in
-    check_failures results in
-  match row_id with
-    | Some(c, v) -> delete_list (InternalRep.get_row tname [c] [v])
-    | None -> delete_list (InternalRep.get_row tname [] [])
+let delete_row tname where =
+  let col = match where with
+    | None -> ""
+    | Some(c, _, _) -> c in
+  let f = match where with
+    | None -> fun x -> true
+    | Some(c, Eq, v) ->     fun x -> x=v
+    | Some(c, NotEq, v) ->  fun x -> x<>v
+    | Some(c, Gt, v) ->     fun x -> x>v
+    | Some(c, Lt, v) ->     fun x -> x<v
+    | Some(c, GtEq, v) ->   fun x -> x>=v
+    | Some(c, LtEq, v) ->   fun x -> x<=v in
+  let keys = InternalRep.get_row tname col f in
+  let delete_key key = InternalRep.delete_row tname key in
+  let results = match keys with
+    | Keys(x) -> List.map delete_key x
+    | _ -> [Failure("Will not reach this case.")] in
+  check_failures results
 
 (**
  * Updates a table, given the table name, a list of (column name, value) pairs
@@ -62,42 +73,48 @@ let delete_row tname row_id =
  * Returns a result of Success if all updates succeed. If any fail, returns
  * a result of Failure containing messages from all failures.
  *)
-let update tname col_lst val_lst row_id =
-  let update_one key =
-    List.map2 (fun x y -> InternalRep.update_value tname x key y) col_lst val_lst in
-  let update_list keys =
-    let results = List.flatten (List.map (fun x -> update_one x) keys) in
-    check_failures results in
-  match row_id with
-    | Some(c, v) -> update_list (InternalRep.get_row tname [c] [v])
-    | None -> update_list (InternalRep.get_row tname [] [])
+let update tname col_lst val_lst where =
+  let col = match where with
+    | None -> ""
+    | Some(c, _, _) -> c in
+  let f = match where with
+    | None -> fun x -> true
+    | Some(c, Eq, v) ->     fun x -> x=v
+    | Some(c, NotEq, v) ->  fun x -> x<>v
+    | Some(c, Gt, v) ->     fun x -> x>v
+    | Some(c, Lt, v) ->     fun x -> x<v
+    | Some(c, GtEq, v) ->   fun x -> x>=v
+    | Some(c, LtEq, v) ->   fun x -> x<=v in
+  let keys = InternalRep.get_row tname col f in
+  let update_key key = List.map2 (fun x y -> InternalRep.update_value tname x key y) col_lst val_lst in
+  let results = match keys with
+    | Keys(x) -> List.map update_key x
+    | _ -> [[Failure("Will not reach this case.")]] in
+  check_failures (List.flatten results)
 
 (**
- * Finds values that match the select-from command, given column names
- * (select) and table name (from).
- * Returns a result Failure if any selection fails. Otherwise, if all succeed,
- * returns a result OColumn the value lists for each selection.
- *)
-let select_from col_names tname =
-  let col_list = match col_names with
-    | None -> InternalRep.get_column_list tname
-    | Some x -> x in
-    let results = List.map (fun x -> InternalRep.get_column tname x) col_list in
-    filter_columns results
-
-(**
- * Finds values that match the select-from-where commands, given column names
- * list (select), table name (from), and triple of column name, operator,
- * value (where) that results must match.
+ * Finds values that match the select-from-where commands. Expects:
+ *   - table name
+ *   - None if no columns specified, or list of column names
+ *   - None if no where conditions, or column name, operator, value triple
  * Returns a result Failure if any selection fails. Otherwise, if all succeed,
  * returns a result OColumn containing the value lists for each selection.
  *)
-let select_from_where (*col_names tname operator col val*) =
-  (* let fun_to_check = match operator with
-    | Eq -> (fun x -> x=val)
-    | NotEq -> (fun x -> x<>val)
-    | Gt -> (fun x -> x>val)
-    | Lt -> (fun x -> x<val)
-    | GtEq -> (fun x -> x>=val)
-    | LtEq -> (fun x -> x<=val) in *)
-  failwith "TODO"
+let select tname col_names where =
+  let col_list = match col_names with
+    | None -> InternalRep.get_column_names tname
+    | Some x -> ColNames x in
+  let f = match where with
+    | None -> fun x -> true
+    | Some(c, Eq, v) ->     fun x -> x=v
+    | Some(c, NotEq, v) ->  fun x -> x<>v
+    | Some(c, Gt, v) ->     fun x -> x>v
+    | Some(c, Lt, v) ->     fun x -> x<v
+    | Some(c, GtEq, v) ->   fun x -> x>=v
+    | Some(c, LtEq, v) ->   fun x -> x<=v in
+  match col_list with
+    | Failure c -> Failure c
+    | ColNames c ->
+        let results = List.map (fun x -> InternalRep.get_column_vals tname x f) c in (* another col name... *)
+        filter_columns results
+    | _ -> Failure("Will not reach this case.")
