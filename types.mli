@@ -1,5 +1,5 @@
-open Tree
 open Async.Std
+open Yojson.Basic
 
 (**
  * key is the primary key, unique in each table.
@@ -26,3 +26,4 @@ type result = Success | Failure of string | Column of value list
               | OpColumn of value list list
               | ColNames of string list
               | Keys of key list
+              | Json of json

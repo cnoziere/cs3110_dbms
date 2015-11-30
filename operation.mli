@@ -21,7 +21,7 @@ val add_row : string -> string list -> value list -> result
  * Deletes a row from a table, given the table name, and None or a
  * (column name, value) pair to identify the row. Returns a type result.
  *)
-val delete_row : string -> (string * value) option -> result
+val delete_row : string -> (string * op * value) option -> result
 
 (**
  * Updates a table, given the table name, the new data as a list of
@@ -29,25 +29,23 @@ val delete_row : string -> (string * value) option -> result
  * to identify the row. Returns a type result.
  *)
 val update : string -> string list -> value list ->
-             (string * value) option -> result
+             (string * op * value) option -> result
 
 (**
- * Finds values that match the select-from command, given column names
- * list (select) and table name (from).
- * Passing in column names as None indicates that all column lists are expected.
+ * Finds values that match the select-from-where commands. Expects:
+ *   - table name
+ *   - None if no columns specified, or list of column names
+ *   - None if no where conditions, or column name, operator, value triple
  * Returns a result Failure if any selection fails. Otherwise, if all succeed,
  * returns a result OColumn containing the value lists for each selection.
  *)
-val select_from : string list option -> string -> result
+val select : string -> string list option -> (string * op * value) option -> result
 
 (**
- * Finds values that match the select-from-where commands, given column names
- * list (select), table name (from), and column name, operator, value (where)
- * that results must match.
- * Returns a result Failure if any selection fails. Otherwise, if all succeed,
- * returns a result OColumn containing the value lists for each selection.
+ * Given a table name, returns result Failure if table doesn't exist, or
+ * OpColumn of all columns.
  *)
-val select_from_where : string list -> string -> string -> op -> value -> result
+val get_table : string -> result
 
 (**
  * Helper functions. [check_failures] is for [delete_row] and [update].
