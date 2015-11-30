@@ -161,7 +161,7 @@ TEST "GET_COLUMN_NAMES_return_all" =
     ignore(add_row "getcol" ["name"] ["kathy"]);
     ignore(add_row "getcol" ["name"; "age"] ["bob"; "20"]);
     match get_column_names "getcol" with
-    | ColNames x -> lists_match x [" "; "age"; "name"]
+    | ColNames x -> lists_match x ["age"; "name"]
     | Failure msg -> print_endline msg; false
     | _ -> false
 

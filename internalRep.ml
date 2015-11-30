@@ -31,13 +31,6 @@ type database =
     mutable updated: unit Ivar.t;
 }
 
-(*
-Reminder of type result
-type result = Success | Failure of string | Column of value list
-      | PFailure of string | PMessage of string
-      | OpColumn of value list list
-      | ColNames of string list
-*)
 
 let db: database =
 {
@@ -66,10 +59,12 @@ let create_table (table_name: string) (col_names: string list): result =
     if col_names = [] then Failure ("No column names are provided to " ^
         "initialize table") else
     let (new_table: table) = ref (Tst.create ()) in
+    (*
     let (key_column: column) = {data = Bst.create (); length = 0} in
     (* Column of primary keys is named the empty string *)
     let (_, new_table') = Tst.insert "" key_column !new_table in
     new_table := new_table';
+    *)
     let rec add_cols = function
         | [] ->
             let (is_duplicate, new_db) = Tst.insert table_name new_table db.data in
@@ -130,6 +125,7 @@ let add_row (table_name: string) (cols_to_change: string list)
         if cols = [] then
             Failure "Table has no columns"
         else if all_mem cols_to_change cols then
+            (* Add a key, "", or the provided value to each column *)
             let rec add_cols = function
             | [] ->
                 (update db.data;
@@ -266,13 +262,3 @@ let get_values (table_name: string) (column_name: string) (keys: key list): resu
             with
                 | Key_not_found k -> (Failure ("The key " ^ string_of_int k
                     ^ " does not exist in the table " ^ table_name))
-
-
-
-(*
-
-NOT NECESSARY?
-
-let delete_col = failwith "TODO"
-
-*)
