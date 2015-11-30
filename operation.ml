@@ -48,9 +48,9 @@ let add_row tname col_names vals = InternalRep.add_row tname col_names vals
  * a result of Failure containing messages from all failures.
  *)
 let delete_row tname where =
-  let col = match where with
+  let col_target = match where with
     | None -> ""
-    | Some(c, _, _) -> c in
+    | Some(c,_,_) -> c in
   let f = match where with
     | None -> fun x -> true
     | Some(c, Eq, v) ->     fun x -> x=v
@@ -59,10 +59,11 @@ let delete_row tname where =
     | Some(c, Lt, v) ->     fun x -> x<v
     | Some(c, GtEq, v) ->   fun x -> x>=v
     | Some(c, LtEq, v) ->   fun x -> x<=v in
-  let keys = InternalRep.get_row tname col f in
+  let keys = InternalRep.get_row tname col_target f in
   let delete_key key = InternalRep.delete_row tname key in
   let results = match keys with
-    | Keys(x) -> List.map delete_key x
+    | Failure x -> [Failure(x)]
+    | Keys k -> List.map delete_key k
     | _ -> [Failure("Will not reach this case.")] in
   check_failures results
 
@@ -74,9 +75,9 @@ let delete_row tname where =
  * a result of Failure containing messages from all failures.
  *)
 let update tname col_lst val_lst where =
-  let col = match where with
+  let col_target = match where with
     | None -> ""
-    | Some(c, _, _) -> c in
+    | Some(c,_,_) -> c in
   let f = match where with
     | None -> fun x -> true
     | Some(c, Eq, v) ->     fun x -> x=v
@@ -85,10 +86,11 @@ let update tname col_lst val_lst where =
     | Some(c, Lt, v) ->     fun x -> x<v
     | Some(c, GtEq, v) ->   fun x -> x>=v
     | Some(c, LtEq, v) ->   fun x -> x<=v in
-  let keys = InternalRep.get_row tname col f in
+  let keys = InternalRep.get_row tname col_target f in
   let update_key key = List.map2 (fun x y -> InternalRep.update_value tname x key y) col_lst val_lst in
   let results = match keys with
-    | Keys(x) -> List.map update_key x
+    | Failure x -> [[Failure x]]
+    | Keys k -> List.map update_key k
     | _ -> [[Failure("Will not reach this case.")]] in
   check_failures (List.flatten results)
 
@@ -104,6 +106,9 @@ let select tname col_names where =
   let col_list = match col_names with
     | None -> InternalRep.get_column_names tname
     | Some x -> ColNames x in
+  let col_target = match where with
+    | None -> ""
+    | Some(c,_,_) -> c in
   let f = match where with
     | None -> fun x -> true
     | Some(c, Eq, v) ->     fun x -> x=v
@@ -115,8 +120,12 @@ let select tname col_names where =
   match col_list with
     | Failure c -> Failure c
     | ColNames c ->
-        let results = List.map (fun x -> InternalRep.get_column_vals tname x f) c in (* another col name... *)
-        filter_columns results
+        let keys = InternalRep.get_row tname col_target f in
+        (match keys with
+          | Failure x -> Failure x
+          | Keys k -> (let results = List.map (fun x -> InternalRep.get_values tname x k) c in
+                       filter_columns results)
+          | _ -> Failure("Will not reach this case."))
     | _ -> Failure("Will not reach this case.")
 
 let get_table tname =
