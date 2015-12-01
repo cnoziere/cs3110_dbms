@@ -10,7 +10,7 @@ val table_to_json: string -> Types.result
 val database_to_json: unit -> Types.result
 
 (* writes a JSON value to the specified file name *)
-val database_to_file: unit -> Types.result
+val database_to_file: unit -> Types.result Deferred.t
 
 (* checks to see if the database has been updated and if so
 writes the database to file *)

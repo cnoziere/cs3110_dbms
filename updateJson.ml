@@ -47,11 +47,16 @@ let database_to_json () =
   Json db
 
 (* writes a JSON value to the specified file name *)
+(* attention: Writer.write overwrites the contents of the previous file *)
 let database_to_file () =
   let dbname = get_name () in
   match database_to_json () with
-  | Json db -> Yojson.Basic.to_file dbname db; Success
-  | _ -> Failure ("Cannot write database " ^ dbname ^ " to file")
+  | Json db -> Writer.open_file "tmp.json" >>=
+               (fun t -> Writer.write t (Yojson.Basic.to_string db);
+               Writer.close t >>=
+               (fun () -> let _ = Sys.rename "tmp.json" (dbname ^ ".json") in
+               return Success))
+  | _ -> return (Failure ("Cannot write database " ^ dbname ^ " to file"))
 
 (* checks to see if the database has been updated and if so
 writes the database to file *)
@@ -59,5 +64,6 @@ let rec watch_for_update () =
   upon (updated ()) (fun () -> watch_for_update ();
   ignore (database_to_file ()))
 
-(* maybe don't need an ignore here... *)
-(* WHAT SHOULD RETURN TYPE OF databse_to_file be? *)
+(* - move watch_for_update to operation
+   - write only every 10 or so
+   - check if file already exists before overwriting *)
