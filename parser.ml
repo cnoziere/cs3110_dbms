@@ -291,7 +291,7 @@ let select params =
  *)
 let print name = match name with
   | [] -> PFailure("Error PRINT: no table name.")
-  | h::[] -> Failure("Operation.get_table h")
+  | h::[] -> Operation.get_table h
   | _ -> PFailure("Error PRINT: too many parameters.")
 
 (**
@@ -323,11 +323,9 @@ let cols_to_rows col_list =
   let f = fun acc c -> match c with
                        | hd :: tl -> acc @ [hd]
                        | [] -> failwith "no" in
-
   let f' = fun c -> match c with
                      | hd :: tl -> tl
                      | [] -> failwith "no" in
-
   let rec helper lst rows =
   match lst with
   | [] -> rows
@@ -336,39 +334,19 @@ let cols_to_rows col_list =
                 helper (List.map f' lst) new_rows in
   helper col_list []
 
-let print_col col =
-  Format.open_tbox ();
-  let f = fun c -> Format.print_string c; Format.print_tbreak 0 0 in
-  List.iter f col;
-  Format.close_tbox ()
+let print_row row =
+  let rec print_rec lst = match lst with
+    | [] -> Printf.printf "\n%s" ""
+    | h::[] -> Printf.printf ", %s\n" h
+    | h::t -> Printf.printf ", %s" h; print_rec t in
+  match row with
+    | [] -> Printf.printf "%s" "No values"
+    | h::t -> Printf.printf "%s" h; print_rec t
 
-let print_cols col_lst = failwith "TODO"
-
-(* let pp_tables pp_row fmt (header,table) =
-  (* we build with the largest length of each column of the
-   * table and header *)
-  let widths = Array.create (Array.length table.(0)) 0 in
-  Array.iter (fun row ->
-    Array.iteri (fun j cell ->
-      widths.(j) <- max (String.length cell) widths.(j)
-    ) row
-  ) table;
-  Array.iteri (fun j cell ->
-    widths.(j) <- max (String.length cell) widths.(j)
-  ) header;
-
-  (* open the table box *)
-  Format.pp_open_tbox fmt ();
-
-  (* print the header *)
-  Format.fprintf fmt "%a@\n" (pp_header widths) header;
-  (* print the table *)
-  Array.iter (pp_row fmt) table;
-
-  (* close the box *)
-  Format.pp_close_tbox fmt (); *)
-
-
+let print_cols col_lst =
+  let rows = cols_to_rows col_lst in
+  Printf.printf "\n%s" "";
+  List.iter print_row rows
 
 let print_result res = match res with
   | Success -> Printf.printf "%s\n" "Success"
