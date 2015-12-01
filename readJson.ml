@@ -1,4 +1,4 @@
-(* This module handles the creation of databases and tables from files *)
+(* This module handles the creation of databases and tables from json files *)
 open Types
 open Operation
 open Yojson.Basic
@@ -9,6 +9,9 @@ let rec one_by_one f = function
                 | Success -> one_by_one f tl
                 | Failure s -> Failure s
                 | _ -> failwith "This should never pattern match")
+
+let ok_to_create_database (dbname : string) =
+    not (Sys.file_exists dbname)
 
 let to_column jsoncol =
     let open Yojson.Basic.Util in
@@ -49,9 +52,13 @@ let create_full_table json =
     | Success -> one_by_one f rows
     | _ -> failwith "This should never pattern match"
 
+let make_table (dbname: string) (tablename : string) =
+    let table = Yojson.Basic.from_file (dbname ^ "_" ^ tablename ^ ".json") in
+    create_full_table table
+
 let create_database json =
     let open Yojson.Basic.Util in
-    let db_name =
+    let dbname =
         json
         |> member "dbName"
         |> to_string in
@@ -59,19 +66,21 @@ let create_database json =
     let tables =
         [json]
         |> filter_member "tables"
-        |> flatten in
+        |> flatten
+        |> List.map to_string in
 
-    InternalRep.set_name db_name;
-    one_by_one create_full_table tables
+    InternalRep.set_name dbname;
+    (* maybe initialize a new databse? make sure the current database is empty *)
+    one_by_one (make_table dbname) tables
 
-let read_JSON file =
+(* filename should be of form __.json *)
+let read_db (filename : string) =
   match
-    try Some (Yojson.Basic.from_file file)
+    try Some (Yojson.Basic.from_file filename)
     with _ -> None
   with
-  | None -> Failure ("No such file: " ^ file)
+  | None -> Failure ("No such file in directory: " ^ filename)
   | Some json -> create_database json
 
 (* CHECK ALL FAILWITH NOOOOO *)
-
 (* TO COMPILE: cs3110 compile -t -p async -p yojson readJson.ml *)
