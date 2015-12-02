@@ -80,18 +80,16 @@ let help params = match params with
 let load params = match params with
   | [] -> PFailure("Error LOAD: no filename.")
   | h::[] -> begin
-      (*if ReadJson.ok_to_create_database h then ReadJson.read_db h
-      else Failure("Database "^h^" already exists.")*)
-      Failure("TODO!!!!!!!!! call ReadJson")
+      if ReadJson.ok_to_create_database h then ReadJson.load_db h
+      else Failure("Database "^h^" already exists.")
     end
   | _ -> PFailure("Error LOAD: too many parameters.")
 
 let create_database params = match params with
   | [] -> PFailure("Error CREATE DATABASE: no name.")
   | h::[] -> begin
-      (*if ReadJson.ok_to_create_database h then Operation.create_database h
-      else Failure("Database "^h^" already exists.") TODO!!!!*)
-      Operation.create_database h
+      if ReadJson.ok_to_create_database h then Operation.create_database h
+      else Failure("Database "^h^" already exists.")
     end
   | _ -> PFailure("Error CREATE DATABASE: too many parameters.")
 
