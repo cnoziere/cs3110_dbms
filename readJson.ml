@@ -34,7 +34,7 @@ let create_full_table (db: database) (tablename : string) json =
         let column_names =                  (* column_names : string list *)
           json
           |> member "columnNames"
-          |> to_string_list
+          |> to_string_list in
 
         let columns =                       (* columns : string list list *)
           json
@@ -55,7 +55,7 @@ let create_full_table (db: database) (tablename : string) json =
 
 let load_table (db : database) (dbname: string) (tablename : string) =
     let path = "./" ^ dbname ^ "/" ^ tablename ^ ".json" in
-    if not Sys.file_exists path then Failure ("Cannot find table " ^ tablename
+    if not (Sys.file_exists path) then Failure ("Cannot find table " ^ tablename
         ^ " in directory " ^ dbname ^ ".\n")
     else match
       (try
@@ -83,7 +83,8 @@ let create_database (dbname: string) json =
       with
       | _ -> None)
     with
-    | None -> Failure ("Cannot parse file .\" ^ dbname ^ "\" ^ dbname ^ ".\n")
+    | None -> Failure ("Cannot parse file ./" ^ dbname ^ "/" ^ dbname ^ ".json\n")
+
     | Some (dbname, tables) -> (match InternalRep.create_database dbname with
                                 | Success db -> UpdateJson.watch_for_update db;
                                                 one_by_one db (load_table db dbname) tables
