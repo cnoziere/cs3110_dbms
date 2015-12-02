@@ -272,7 +272,6 @@ let create_whole_table (db: database) (table_name: string)
     else if List.length col_names <> List.length values then
         Failure "List of columns and values do not match"
     else
-    (* let (new_table: table) = Tst.create () in *)
     (* Add a list of list of values into list of columns *)
     let rec add_cols (added_table: table) (cols: string list) (vals: value list list) =
         match cols, vals with
@@ -288,14 +287,16 @@ let create_whole_table (db: database) (table_name: string)
                 match vals_to_add with
                 | [] ->
                     (* Insert col into a table *)
-                    let (is_duplicate, new_table) = Tst.insert col_name col added_table in
+                    let (is_duplicate, new_table) =
+                        Tst.insert col_name col added_table in
                     if is_duplicate then
                         Failure "Duplicate column name used to initialize table"
                     else
                         add_cols new_table next_names next_vals
                 | v::vs ->
                     (* Insert value v in column col *)
-                    let (is_duplicate, new_col) = Bst.insert col.length v col.data in
+                    let (is_duplicate, new_col) =
+                        Bst.insert col.length v col.data in
                     if is_duplicate then
                         Failure "Duplicate key used to initialize table"
                     else
