@@ -98,11 +98,7 @@ let load_db (dbname : string) =
     | None -> Failure ("Cannot find/parse the file at the following path: " ^ path ^ "\n")
     | Some json -> create_database dbname json
 
+
+
 (* CHECK ALL FAILWITH NOOOOO *)
 (* TO COMPILE: cs3110 compile -t -p async -p yojson readJson.ml *)
-
-(* dropping tables ? *)
-
-(* changed read_db to load_db *)
-
-(* wait for asta's implementation in create_full_table *)
