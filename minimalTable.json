@@ -1,9 +1,0 @@
-{
-  "tableName": "Bonjour",
-  "columnNames": ["Name", "Age", "Color"],
-  "rows":
-  [
-    ["Constance", "20", "Green"],
-    ["Audrey", "13", "Blue"]
-  ]
-}

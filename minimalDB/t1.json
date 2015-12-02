@@ -1,0 +1,10 @@
+{
+  "tableName": "t1",
+  "columnNames": ["Name", "Age", "Color"],
+  "columns":
+  [
+    ["Constance", "Asta", "Amanda"],
+    ["12", "13", "14"],
+    ["Blue", "Green", "Purple"]
+  ]
+}
