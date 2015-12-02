@@ -15,21 +15,21 @@ let myDB =
     | Success db ->
     (match create_table db "test_table" ["name"; "grade"; "age"] with
     | Success db ->
-    (match add_row db "test_table" ["name"; "grade"; "age"] ["asta"; "college"; "19"] with
+    (match add_row db "test_table" ["name"; "grade"; "age"] ["amanda"; "1"; "19"] with
     | Success db ->
-    (match add_row db "test_table" ["name"; "grade"; "age"] ["kathy"; "11"; "15"] with
+    (match add_row db "test_table" ["name"; "grade"; "age"] ["andy"; "2"; "15"] with
     | Success db ->
-    (match add_row db "test_table" ["name"; "grade"; "age"] ["bob"; "8"; "13"] with
+    (match add_row db "test_table" ["name"; "grade"; "age"] ["asta"; "3"; "13"] with
     | Success db ->
-    (match add_row db "test_table" ["name"; "grade"; "age"] ["max"; "2"; "7"] with
+    (match add_row db "test_table" ["name"; "grade"; "age"] ["bob"; "4"; "7"] with
     | Success db ->
-    (match add_row db "test_table" ["name"; "grade"; "age"] ["andy"; "3"; "8"] with
+    (match add_row db "test_table" ["name"; "grade"; "age"] ["constance"; "5"; "8"] with
     | Success db ->
-    (match add_row db "test_table" ["name"; "grade"; "age"] ["john"; "none"; "23"] with
+    (match add_row db "test_table" ["name"; "grade"; "age"] ["john"; "6"; "23"] with
     | Success db ->
-    (match add_row db "test_table" ["name"; "grade"; "age"] ["amanda"; "college"; "18"] with
+    (match add_row db "test_table" ["name"; "grade"; "age"] ["kathy"; "7"; "18"] with
     | Success db ->
-    (match add_row db "test_table" ["name"; "grade"; "age"] ["constance"; "college"; "21"] with
+    (match add_row db "test_table" ["name"; "grade"; "age"] ["max"; "8"; "21"] with
     | Success db -> db
     | _ -> failwith "Error")
     | _ -> failwith "Error")
@@ -44,6 +44,11 @@ let myDB =
 
 
 let print_table db table_name =
+    print_endline "KEYS";
+    (match get_row db table_name "" (fun x -> true) with
+    | Keys keys -> List.iter (fun x -> print_int x; print_newline ()) keys
+    | Failure msg -> print_endline msg
+    | _ -> print_endline "Error 3");
     match get_column_names db table_name with
     | ColNames col_names ->
         let rec print_column = function
@@ -59,6 +64,8 @@ let print_table db table_name =
     | Failure msg -> print_endline msg
     | _ -> print_endline "Error 2"
 
+
+TEST_UNIT = print_table myDB "test_table"
 
 TEST "CREATE_DATABASE_returns_success" =
     print_endline "CREATE_DATABASE_returns_success";
@@ -180,7 +187,11 @@ TEST "ADD_ROW_diff_length" =
 TEST "DELETE_ROW_success" =
     print_endline "DELETE_ROW_success";
     match delete_row (reset myDB) "test_table" 4 with
-    | Success db -> true
+    | Success db ->
+        (match add_row db "test_table" ["name"; "grade"; "age"] ["asta"; "college"; "19"] with
+        | Success db -> true
+        | Failure msg -> print_endline msg; false
+        | _ -> false)
     | Failure msg -> print_endline msg; false
     | _ -> false
 
@@ -218,7 +229,7 @@ TEST "GET_COLUMN_NAMES_return_all" =
 TEST "GET_COLUMN_VALS_return_all_vals" =
     print_endline "GET_COLUMN_VALS_return_all_vals";
     match get_column_vals (reset myDB) "test_table" "name" (fun x -> true) with
-    | Column x -> lists_match x ["asta"; "kathy"; "bob"; "max"; "andy"; "john"; "amanda"; "constance"]
+    | Column x -> lists_match x ["amanda"; "andy"; "asta"; "bob"; "constance"; "john"; "kathy"; "max"]
     | Failure msg -> print_endline msg; false
     | _ -> false
 
@@ -232,7 +243,7 @@ TEST "GET_COLUMN_VALS_return_equals" =
 TEST "GET_ROW_returns_all_keys_age" =
     print_endline "GET_ROW_returns_all_keys_age";
     match get_row (reset myDB) "test_table" "age" (fun x -> x = "19" || x = "8") with
-    | Keys x -> List.iter print_int x; lists_match x [0;4]
+    | Keys x -> lists_match x [0;4]
     | Failure msg -> print_endline msg; false
     | _ -> false
 
@@ -244,7 +255,7 @@ TEST "GET_ROW_returns_all_keys" =
     | _ -> false
 
 TEST "GET_VALUES_success" =
-    print_endline "GET_ROW_returns_all_keys";
+    print_endline "GET_VALUES_success";
     match get_row (reset myDB) "test_table" "age" (fun x -> x = "19" || x = "8") with
     | Keys keys ->
         (match get_values (reset myDB) "test_table" "age" keys with
@@ -258,22 +269,29 @@ TEST "GET_TABLE_NAMES_success" =
     print_endline "GET_TABLE_NAMES_success";
     lists_match (get_table_names (reset myDB)) ["test_table"]
 
-TEST_UNIT "PRINT_TABLE" =
-    print_endline "PRINT_TABLE";
-    print_table (reset myDB) "test_table"
-
-TEST_UNIT "CREATE_WHOLE_TABLE" =
-    print_endline "CREATE_WHOLE_TABLE";
+TEST "CREATE_WHOLE_TABLE_success" =
+    print_endline "CREATE_WHOLE_TABLE_success";
     let vals = [["a";"b";"c"]; ["1";"2";"3"]] in
     match create_whole_table (reset myDB) "new_table" ["col1"; "col2"] vals with
-    | Success db -> print_table db "new_table"
-    | Failure msg -> print_endline msg
-    | _ -> print_endline "ERROR"
+    | Success db ->
+        let col1_matches =
+            match get_column_vals db "new_table" "col1" (fun x -> true) with
+            | Column x -> lists_match x ["a";"b";"c"]
+            | Failure msg -> print_endline msg; false
+            | _ -> false in
+        let col2_matches =
+            match get_column_vals db "new_table" "col2" (fun x -> true) with
+            | Column x -> lists_match x ["1";"2";"3"]
+            | Failure msg -> print_endline msg; false
+            | _ -> false in
+        lists_match (get_table_names db) ["new_table"; "test_table"]
+        && col1_matches && col2_matches
+    | Failure msg -> print_endline msg; false
+    | _ -> false
 
-TEST_UNIT "CREATE_WHOLE_TABLE_error" =
-    print_endline "CREATE_WHOLE_TABLE_error";
+TEST "CREATE_WHOLE_TABLE_fails" =
+    print_endline "CREATE_WHOLE_TABLE_fails";
     let vals = [["a";"b";"c"]; ["1";"2";"3"]; ["1";"2";"3"]] in
     match create_whole_table (reset myDB) "new_table" ["col1"; "col2"] vals with
-    | Success db -> print_table db "new_table"
-    | Failure msg -> print_endline msg
-    | _ -> print_endline "ERROR"
+    | Failure "List of columns and values do not match" -> true
+    | _ -> false

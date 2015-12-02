@@ -23,7 +23,7 @@ type op = Eq | NotEq | Gt | Lt | GtEq | LtEq
 type column =
 {
     data: value Bst.tree;
-    length: int;
+    last_index: int;
 }
 
 (**
