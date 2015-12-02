@@ -8,15 +8,15 @@ open Async.Std
  *)
 type column =
 {
-    mutable data: value Bst.tree;
-    mutable length: int;
+    data: value Bst.tree;
+    length: int;
 }
 
 (**
  * A table is represented by a TST with string keys (the names of each column)
  * containing columns
  *)
-type table = column Tst.tree ref
+type table = column Tst.tree
 
 (**
  * A database is represented by a TST with string keys (the names of each table)
@@ -26,12 +26,19 @@ type table = column Tst.tree ref
  *)
 type database =
 {
-    mutable name: string;
-    mutable data: table Tst.tree;
-    mutable updated: unit Ivar.t;
+    name: string;
+    data: table Tst.tree;
 }
 
+(*
+type observed =
+{
+    mutable table_name: string
+    mutable updated: observed Ivar.t
+}
+*)
 
+(*
 let db: database =
 {
     name = "default";
@@ -46,10 +53,16 @@ let db: database =
  *)
 let update (data: table Tst.tree) =
     db.data <- data;
-    Ivar.fill db.updated ();
-    db.updated <- Ivar.create ()
+    Ivar.fill observed.updated ();
+    observed.updated <- Ivar.create ()
 
-let updated () = Ivar.read (db.updated)
+let updated observed = Ivar.read (observed.updated)
+
+
+let create_database (new_name: string): unit =
+    db.name <- new_name;
+    db.data <- Tst.create ();
+    db.updated <- Ivar.create ()
 
 let get_name () = db.name
 
@@ -59,12 +72,6 @@ let create_table (table_name: string) (col_names: string list): result =
     if col_names = [] then Failure ("No column names are provided to " ^
         "initialize table") else
     let (new_table: table) = ref (Tst.create ()) in
-    (*
-    let (key_column: column) = {data = Bst.create (); length = 0} in
-    (* Column of primary keys is named the empty string *)
-    let (_, new_table') = Tst.insert "" key_column !new_table in
-    new_table := new_table';
-    *)
     let rec add_cols = function
         | [] ->
             let (is_duplicate, new_db) = Tst.insert table_name new_table db.data in
@@ -223,6 +230,7 @@ let get_column_vals (table_name: string) (column_name: string)
             | [] -> [] in
             Column (check_vals (Bst.list_bst selected_col.data))
 
+
 exception Empty_table
 
 let get_row (table_name: string) (column_name: string)
@@ -248,6 +256,7 @@ let get_row (table_name: string) (column_name: string)
         with
         | Empty_table -> Failure (table_name ^ " has no columns")
 
+
 exception Key_not_found of key
 
 let get_values (table_name: string) (column_name: string) (keys: key list): result =
@@ -270,3 +279,5 @@ let get_values (table_name: string) (column_name: string) (keys: key list): resu
             with
                 | Key_not_found k -> (Failure ("The key " ^ string_of_int k
                     ^ " does not exist in the table " ^ table_name))
+
+*)

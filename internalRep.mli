@@ -7,10 +7,16 @@ open Async.Std
  *)
 
 (**
+ * Create a new database given a name
+ *)
+val create_database: string -> unit
+
+(*
+(**
  * returns a deferred that becomes determined once the database
  * has been modified
  *)
-val updated: unit -> unit Deferred.t
+val updated: database -> database Deferred.t
 
 (**
  * Get name of current database
@@ -88,3 +94,12 @@ val get_row: string -> string -> (value -> bool) -> result
  * in the column corresponding to the keys
  *)
 val get_values: string -> string -> key list -> result
+
+(**
+ * Create new table and populate with values
+ * Input: table name, list of column names, list of values in each column
+ * Precondition: list of column names must be the same length as list of value lists
+val create_whole_table: string -> string list -> value list list -> result
+ *)
+
+*)
