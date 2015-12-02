@@ -19,6 +19,10 @@ HELP
 LOAD filename
   - Loads the backed up database contained in the JSON file with name filename.
 
+CREATE DATABASE dbname
+  - Creates a database with name dbname.
+  - *** Note: There must be a database before doing operations on tables.
+
 CREATE TABLE tablename (col1,col2,...)
   - Creates a table with name tablename and columns col1, col2, ...
 
@@ -79,16 +83,19 @@ let help params = match params with
 
 let load params = match params with
   | [] -> PFailure("Error LOAD: no filename.")
-  | h::[] -> begin
-      if ReadJson.ok_to_create_database h then ReadJson.load_db h
-      else Failure("Database "^h^" already exists.")
-    end
+  | h::[] -> ReadJson.load_db h
   | _ -> PFailure("Error LOAD: too many parameters.")
 
 let create_database params = match params with
   | [] -> PFailure("Error CREATE DATABASE: no name.")
   | h::[] -> begin
-      if ReadJson.ok_to_create_database h then Operation.create_database h
+      if ReadJson.ok_to_create_database h then begin
+        let res = Operation.create_database h in
+        let () = match res with
+          | Success db -> UpdateJson.watch_for_update db
+          | _ -> () in
+        res
+      end
       else Failure("Database "^h^" already exists.")
     end
   | _ -> PFailure("Error CREATE DATABASE: too many parameters.")

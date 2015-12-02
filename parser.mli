@@ -8,10 +8,14 @@ val start_repl : unit -> unit
 
 (**
  * Matches user input to find appropriate command to call from ReadJSON or
- * Operation.
+ * Operation. Used when a database is initialized.
  *)
 val evaluate_db : database -> string -> (result * bool)
 
+(**
+ * Matches user input to find appropriate command to call from ReadJSON or
+ * Operation. Used when no database has been initialized.
+ *)
 val evaluate : string -> (result * bool)
 
 (**
