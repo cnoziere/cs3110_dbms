@@ -10,6 +10,8 @@ val start_repl : unit -> unit
  * Matches user input to find appropriate command to call from ReadJSON or
  * Operation.
  *)
+val evaluate_db : database -> string -> (result * bool)
+
 val evaluate : string -> (result * bool)
 
 (**
