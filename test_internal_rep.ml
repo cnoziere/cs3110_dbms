@@ -1,34 +1,5 @@
 open InternalRep
-(* open Async.Std *)
 open Types
-
-
-(*
-(* Test the deferred d is determined to be the value v *)
-let test_async_eq (d: 'a Deferred.t) (v: 'a): bool =
-    Thread_safe.block_on_async (fun () -> d) = Core.Std.Result.Ok v
-
-(* Test the deferred d is determined to be the value v within timespan t *)
-let test_async_eq_with_timeout (t: float) (d: 'a Deferred.t) (v: 'a): bool =
-    Thread_safe.block_on_async (fun ()
-    -> with_timeout (Core.Std.sec t) d) = Core.Std.Result.Ok (`Result v)
-
-(* Test the deferred d is not determined to be the value v within timespan t *)
-let test_async_timeout (t: float) (d: 'a Deferred.t): bool =
-    Thread_safe.block_on_async (fun ()
-    -> with_timeout (Core.Std.sec t) d) = Core.Std.Result.Ok `Timeout
-
-(* Test if the value at val_ref is as expected after time delay *)
-let check_val (val_ref: int ref) (expected: int) (delay: float): bool =
-    Thread_safe.block_on_async (fun () -> after (Core.Std.sec delay)
-    >>= fun () -> return !val_ref) = Core.Std.Result.Ok expected
-
-(* Test if the values at ref1 and ref2 are as expected after time delay *)
-let check_two_vals (ref1: int ref) (val1: int)
-        (ref2: int ref) (val2: int) (t: float): bool =
-    Thread_safe.block_on_async (fun () -> after (Core.Std.sec t) >>=
-    fun () -> return (!ref1, !ref2)) = Core.Std.Result.Ok (val1, val2)
-*)
 
 let rec lists_match x y =
     match x, y with
@@ -38,6 +9,41 @@ let rec lists_match x y =
 
 let print_string_list = List.iter print_endline
 
+(* Set up a database *)
+let myDB =
+    match create_database "(reset myDB)" with
+    | Success db ->
+    (match create_table db "addrow" ["name"; "grade"; "age"] with
+    | Success db ->
+    (match add_row db "addrow" ["name"; "grade"; "age"] ["asta"; "college"; "19"] with
+    | Success db ->
+    (match add_row db "addrow" ["name"; "grade"; "age"] ["kathy"; "11"; "15"] with
+    | Success db ->
+    (match add_row db "addrow" ["name"; "grade"; "age"] ["bob"; "8"; "13"] with
+    | Success db ->
+    (match add_row db "addrow" ["name"; "grade"; "age"] ["max"; "2"; "7"] with
+    | Success db ->
+    (match add_row db "addrow" ["name"; "grade"; "age"] ["andy"; "3"; "8"] with
+    | Success db ->
+    (match add_row db "addrow" ["name"; "grade"; "age"] ["john"; "none"; "23"] with
+    | Success db ->
+    (match add_row db "addrow" ["name"; "grade"; "age"] ["amanda"; "college"; "18"] with
+    | Success db ->
+    (match add_row db "addrow" ["name"; "grade"; "age"] ["constance"; "college"; "21"] with
+    | Success db -> db
+    | _ -> failwith "Error")
+    | _ -> failwith "Error")
+    | _ -> failwith "Error")
+    | _ -> failwith "Error")
+    | _ -> failwith "Error")
+    | _ -> failwith "Error")
+    | _ -> failwith "Error")
+    | _ -> failwith "Error")
+    | _ -> failwith "Error")
+    | _ -> failwith "Error"
+
+
+(*
 let print_table (table_name: string) =
     match get_column_names table_name with
     | ColNames col_names ->
@@ -53,133 +59,163 @@ let print_table (table_name: string) =
         print_column col_names
     | Failure msg -> print_endline msg
     | _ -> print_endline "Error 2"
+*)
+
+TEST "CREATE_DATABASE_returns_success" =
+    print_endline "CREATE_DATABASE_returns_success";
+    match create_database "(reset myDB)" with
+    | Success db -> true
+    | Failure msg -> print_endline msg; false
+    | _ -> false
+
+TEST "SET_NAME_returns_success" =
+    print_endline "SET_NAME_returns_success";
+    match create_database "(reset myDB)" with
+    | Success db ->
+        (get_name db = "(reset myDB)" &&
+        match set_name "newDB" db with
+        | Success db -> get_name db = "newDB"
+        | Failure msg -> print_endline msg; false
+        | _ -> false)
+    | Failure msg -> print_endline msg; false
+    | _ -> false
 
 
 TEST "CREATE_TABLE_returns_success" =
     print_endline "CREATE_TABLE_returns_success";
-    match create_table "test" ["a"; "b"; "c"] with
-    | Success -> true
+    match create_database "(reset myDB)" with
+    | Success db ->
+        (match create_table db "test" ["a"; "b"; "c"] with
+        | Success db -> true
+        | Failure msg -> print_endline msg; false
+        | _ -> false)
     | Failure msg -> print_endline msg; false
     | _ -> false
+
 
 TEST "CREATE_TABLE_duplicate_table" =
     print_endline "CREATE_TABLE_duplicate_table";
-    match create_table "test" ["d"; "e"; "f"] with
-    | Failure "Table name already exists in database" -> true
+    match create_database "(reset myDB)" with
+    | Success db ->
+        (match create_table db "test" ["a"; "b"; "c"] with
+        | Success db ->
+            (match create_table db "test" ["a"; "b"; "c"] with
+            | Failure "Table name already exists in database" -> true
+            | _ -> false)
+        | _ -> false)
     | _ -> false
+
 
 TEST "CREATE_TABLE_duplicate_col" =
     print_endline "CREATE_TABLE_duplicate_col";
-    match create_table "test2" ["d"; "e"; "f"; "e"] with
-    | Failure "Duplicate column name used to initialize table" -> true
+    match create_database "(reset myDB)" with
+    | Success db ->
+        (match create_table db "test" ["a"; "c"; "c"] with
+        | Failure "Duplicate column name used to initialize table" -> true
+        | _ -> false)
     | _ -> false
 
-(*
-TEST_UNIT "UPDATED_not_determined" =
-    print_endline "UPDATED_not_determined";
-    upon (updated ()) (fun () -> print_endline "Print: UPDATED_not_determined")
-
-TEST "UPDATED_determined" =
-    print_endline "UPDATED_determined";
-    upon (updated ()) (fun () -> print_endline "Print: UPDATED_determined");
-    match create_table "a" ["a"; "b"; "c"] with
-    | Success -> true
-    | Failure msg -> print_endline msg; false
-    | _ -> false
-*)
-
-TEST "DROP_added_table" =
-    print_endline "DROP_added_table";
-    ignore (create_table "b" ["a"; "b"; "c"]);
-    match drop_table "b" with
-    | Success -> true
-    | Failure msg -> print_endline msg; false
-    | _ -> false
 
 TEST "DROP_table_add" =
     print_endline "DROP_table_add";
-    ignore (create_table "b" ["a"; "b"; "c"]);
-    ignore (drop_table "b");
-    match create_table "b" ["a"; "b"; "c"] with
-    | Success -> true
-    | Failure msg -> print_endline msg; false
+    match create_database "(reset myDB)" with
+    | Success db ->
+        (match create_table db "test" ["a"; "b"; "c"] with
+        | Success db ->
+            (match drop_table db "test" with
+            | Success db ->
+                (match create_table db "test" ["a"; "b"; "c"] with
+                | Success db -> true
+                | Failure msg -> print_endline msg; false
+                | _ -> false)
+            | Failure msg -> print_endline msg; false
+            | _ -> false)
+        | _ -> false)
     | _ -> false
+
 
 TEST "ADD_ROW_success" =
     print_endline "ADD_ROW_success";
-    ignore (create_table "addrow" ["name"; "grade"; "age"]);
-    match add_row "addrow" ["name"; "grade"] ["asta"; "college"] with
-    | Success -> true
-    | Failure msg -> print_endline msg; false
+    match create_database "(reset myDB)" with
+    | Success db ->
+        (match create_table db "addrow" ["name"; "grade"; "age"] with
+        | Success db ->
+            (match add_row db "addrow" ["name"; "grade"; "age"] ["asta"; "college"; "19"] with
+            | Success db -> true
+            | Failure msg -> print_endline msg; false
+            | _ -> false)
+        | _ -> false)
     | _ -> false
 
 TEST "ADD_ROW_partial_list" =
     print_endline "ADD_ROW_partial_list";
-    ignore(add_row "addrow" ["age"] ["5"]);
-    ignore(add_row "addrow" ["name"; "grade"; "age"] ["asta"; "10"; "15"]);
-    match add_row "addrow" ["grade"] ["college"] with
-    | Success -> true
+    match add_row (reset myDB) "addrow" ["name"; "age"] ["asta"; "19"] with
+    | Success db ->
+        (match add_row db "addrow" ["age"; "grade"] ["20"; "college"] with
+        | Success db -> true
+        | Failure msg -> print_endline msg; false
+        | _ -> false)
     | Failure msg -> print_endline msg; false
     | _ -> false
+
 
 TEST "ADD_ROW_no_table_failure" =
     print_endline "ADD_ROW_no_table_failure";
-    match add_row "not_table" ["grade"] ["college"] with
+    match add_row (reset myDB) "not_table" ["name"; "age"] ["asta"; "19"] with
     | Failure _ -> true
     | _ -> false
 
-TEST "ADD_ROW_failure" =
-    print_endline "ADD_ROW_failure";
-    match add_row "addrow" ["year"] ["college"] with
-    | Failure _ -> true
+TEST "ADD_ROW_diff_length" =
+    print_endline "ADD_ROW_diff_length";
+    match create_database "(reset myDB)" with
+    | Success db ->
+        (match create_table db "addrow" ["name"; "grade"; "age"] with
+        | Success db ->
+            (match add_row db "not_table" ["name"; "age"] ["asta"] with
+            | Failure _ -> true
+            | _ -> false)
+        | _ -> false)
     | _ -> false
+
 
 TEST "DELETE_ROW_success" =
     print_endline "DELETE_ROW_success";
-    match delete_row "addrow" 1 with
-    | Success -> true
+    match delete_row (reset myDB) "addrow" 4 with
+    | Success db -> true
     | Failure msg -> print_endline msg; false
     | _ -> false
+
 
 TEST "DELETE_ROW_failure" =
     print_endline "DELETE_ROW_failure";
-    match delete_row "addrow" 5 with
+    match delete_row (reset myDB) "addrow" 20 with
     | Failure "Key does not exist" -> true
     | _ -> false
 
+
 TEST "UPDATE_VALUE_success" =
     print_endline "UPDATE_VALUE_success";
-    match update_value "addrow" "age" 2 "19" with
-    | Success -> true
+    match update_value (reset myDB) "addrow" "age" 2 "20" with
+    | Success db -> true
     | Failure msg -> print_endline msg; false
     | _ -> false
 
-TEST "UPDATE_VALUE_success_first_col" =
-    print_endline "UPDATE_VALUE_success_first_col";
-    match update_value "addrow" "name" 2 "hello" with
-    | Success -> true
-    | Failure msg -> print_endline msg; false
-    | _ -> false
 
 TEST "UPDATE_VALUE_no_key" =
     print_endline "UPDATE_VALUE_no_key";
-    match update_value "addrow" "age" 8 "19" with
+    match update_value (reset myDB) "addrow" "age" 20 "20" with
     | Failure _ -> true
     | _ -> false
 
+
 TEST "GET_COLUMN_NAMES_return_all" =
     print_endline "GET_COLUMN_NAMES_return_all";
-    ignore(create_table "getcol" ["name"; "age"]);
-    ignore(add_row "getcol" ["age"] ["5"]);
-    ignore(add_row "getcol" ["name"; "age"] ["asta"; "4"]);
-    ignore(add_row "getcol" ["name"; "age"] ["john"; "10"]);
-    ignore(add_row "getcol" ["name"; "age"] ["max"; "11"]);
-    ignore(add_row "getcol" ["name"] ["kathy"]);
-    ignore(add_row "getcol" ["name"; "age"] ["bob"; "20"]);
-    match get_column_names "getcol" with
-    | ColNames x -> lists_match x ["age"; "name"]
+    match get_column_names (reset myDB) "addrow" with
+    | ColNames x -> lists_match x ["age"; "grade"; "name"]
     | Failure msg -> print_endline msg; false
     | _ -> false
+
+(*
 
 TEST "GET_COLUMN_VALS_return_all_vals" =
     print_endline "GET_COLUMN_VALS_return_all_vals";
@@ -231,5 +267,4 @@ TEST_UNIT "PRINT_TABLE" =
     ignore (update_value "getcol" "name" 0 "test");
     print_table "getcol"
 
-
-(* let _ = Scheduler.go () *)
+*)

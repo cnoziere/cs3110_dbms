@@ -1,111 +1,77 @@
 open Types
 open Async.Std
 
-
 (**
- * A column is represented by a BST with integer keys (the row key)
- * and string data (table values).
- *)
-type column =
-{
-    data: value Bst.tree;
-    length: int;
-}
-
-(**
- * A table is represented by a TST with string keys (the names of each column)
- * containing columns
- *)
-type table = column Tst.tree
-
-(**
- * A database is represented by a TST with string keys (the names of each table)
- * containing tables
- * The mutable updated field contains an Ivar that is filled when a change is
- * made, and is immediately replaced by an unfilled Ivar
- *)
-type database =
-{
-    name: string;
-    data: table Tst.tree;
-}
-
-(*
-type observed =
-{
-    mutable table_name: string
-    mutable updated: observed Ivar.t
-}
-*)
-
-(*
-let db: database =
-{
-    name = "default";
-    data = Tst.create ();
-    updated = Ivar.create ();
-}
-
-(**
- * [update] updates the data field with a new tree,
+ * [update] returns a new database
  * fills the Ivar in the database (the deferred read in [updated]
- * becomes determined), and then replaces the updated field with an empty Ivar
+ * becomes determined), and fills the new updated field with an empty Ivar
  *)
-let update (data: table Tst.tree) =
-    db.data <- data;
-    Ivar.fill observed.updated ();
-    observed.updated <- Ivar.create ()
+let update (db: database) (table_name: string) =
+    let new_db = {db with updated = Ivar.create ()} in
+    Ivar.fill db.updated (new_db, table_name);
+    new_db
 
-let updated observed = Ivar.read (observed.updated)
+let reset db = {db with updated = Ivar.create ()}
+
+let updated db = Ivar.read (db.updated)
+
+let create_database (new_name: string): result =
+    if new_name = "" then
+        Failure "Database name cannot be empty string"
+    else
+        Success
+        {
+            name = new_name;
+            data = Tst.create ();
+            updated = Ivar.create ()
+        }
+
+let get_name db = db.name
+
+let set_name new_name db =
+    if new_name = "" then
+        Failure "Database name cannot be empty string"
+    else
+        Success {db with name = new_name}
 
 
-let create_database (new_name: string): unit =
-    db.name <- new_name;
-    db.data <- Tst.create ();
-    db.updated <- Ivar.create ()
-
-let get_name () = db.name
-
-let set_name (new_name: string): unit = db.name <- new_name
-
-let create_table (table_name: string) (col_names: string list): result =
+let create_table (db: database) (table_name: string) (col_names: string list): result =
     if col_names = [] then Failure ("No column names are provided to " ^
         "initialize table") else
-    let (new_table: table) = ref (Tst.create ()) in
-    let rec add_cols = function
+    let (new_table: table) = Tst.create () in
+    let rec add_cols table col_names =
+        match col_names with
         | [] ->
-            let (is_duplicate, new_db) = Tst.insert table_name new_table db.data in
+            let (is_duplicate, new_data) = Tst.insert table_name table db.data in
             if is_duplicate then
                 Failure "Table name already exists in database"
             else
-                (update new_db;
-                Success)
+                Success (update {db with data = new_data} table_name)
         | h::t ->
             let (new_column: column) = {data = Bst.create (); length = 0} in
-            let (is_duplicate, new_table') =
-                Tst.insert h new_column !new_table in
+            let (is_duplicate, new_table) = Tst.insert h new_column table in
             if is_duplicate then
                 Failure "Duplicate column name used to initialize table"
             else
-                (new_table := new_table';
-                add_cols t) in
-    add_cols col_names
+                add_cols new_table t in
+    add_cols new_table col_names
 
 
-let get_table_names (): string list =
+let get_table_names (db: database): string list =
     let rec get_names = function
     | [] -> []
     | (name,_)::t -> name::get_names t in
     get_names (Tst.list_tst db.data)
 
 
-let drop_table (dropped: string): result =
-    let (success, new_db) = Tst.remove dropped db.data in
+(* Note: the dropped table will be passed to writeJSON. WriteJSON should note
+ * that the table does not exist and clear or remove the file *)
+let drop_table (db: database) (table_to_drop: string): result =
+    let (success, new_data) = Tst.remove table_to_drop db.data in
     if success then
-        (update new_db;
-        Success)
+        Success (update {db with data = new_data} table_to_drop)
     else
-        Failure (dropped ^ " is not a table in the database")
+        Failure (table_to_drop ^ " is not a table in the database")
 
 
 (* Returns true if all items in sublst are a member of assoc_lst *)
@@ -120,7 +86,7 @@ let rec all_mem (sublst: 'a list) (assoc_lst: ('a * 'b) list): bool =
         | Not_found -> false
 
 
-let add_row (table_name: string) (cols_to_change: string list)
+let add_row (db: database) (table_name: string) (cols_to_change: string list)
     (vals: value list): result =
     if List.length cols_to_change <> List.length vals then
         Failure "Number of columns and values to be added do not match"
@@ -128,85 +94,103 @@ let add_row (table_name: string) (cols_to_change: string list)
     | None -> Failure (table_name ^ " is not a table in the database")
     | Some table_to_change ->
         (* Cols is the associative list of col names and columns *)
-        let cols = Tst.list_tst (!table_to_change) in
+        let cols = Tst.list_tst table_to_change in
         if cols = [] then
             Failure "Table has no columns"
         else if all_mem cols_to_change cols then
             (* Add a key, "", or the provided value to each column *)
-            let rec add_cols = function
+            let rec add_cols table cols =
+            match cols with
             | [] ->
-                (update db.data;
-                Success)
+                let (updated, new_data) = Tst.insert table_name table db.data in
+                if updated then
+                    Success (update {db with data = new_data} table_name)
+                else
+                    Failure (table_name ^ " is not a table in the database")
             | (name, curr_col)::t ->
                 (* [find_cols]: find the value to be inserted into curr_col *)
-                let rec find_cols names vs =
+                let rec find_val names vs =
                     match names, vs with
-                    | [],[] -> ""
                     | h1::t1, h2::t2 ->
                         if h1 = name then h2
-                        else find_cols t1 t2
-                    | _,_ -> "" in (* case not possible *)
+                        else find_val t1 t2
+                    | _,_ -> "" in
                 let (updated, new_col) =
                     Bst.insert curr_col.length
-                    (find_cols cols_to_change vals) curr_col.data in
+                        (find_val cols_to_change vals) curr_col.data in
                 if updated then Failure "Row key already exists"
                 else
-                    (curr_col.length <- curr_col.length + 1;
-                    curr_col.data <- new_col;
-                    add_cols t) in
-            add_cols cols
+                    let (updated, new_table) =
+                        Tst.insert name
+                        {length = curr_col.length + 1; data = new_col} table in
+                    if updated then add_cols new_table t
+                    else Failure (name ^ " is not a column in the table " ^ table_name) in
+            add_cols table_to_change cols
         else
             Failure ("Provided columns do not exist in the table " ^ table_name)
 
 
-let delete_row (table_name: string) (key_to_delete: key): result =
+let delete_row (db: database) (table_name: string) (key_to_delete: key): result =
     match Tst.get table_name db.data with
     | None -> Failure (table_name ^ " is not a table in the database")
     | Some table_to_change ->
         (* Cols is the associative list of col names and columns *)
-        let cols = Tst.list_tst (!table_to_change) in
+        let cols = Tst.list_tst table_to_change in
         if cols = [] then
             Failure "Table has no columns"
         else
             (* [remove_key] removes the key_to_delete from all columns in cols *)
-            let rec remove_key = function
+            let rec remove_key table cols =
+            match cols with
             | [] ->
-                (update db.data;
-                Success)
-            | (_, curr_col)::t ->
+                let (updated, new_data) = Tst.insert table_name table db.data in
+                if updated then
+                    Success (update {db with data = new_data} table_name)
+                else
+                    Failure (table_name ^ " is not a table in the database")
+            | (name, curr_col)::t ->
                 let (x: column) = curr_col in
                 let (removed, new_col) = Bst.remove key_to_delete (x.data) in
                 if removed then
-                    (curr_col.length <- curr_col.length - 1;
-                    curr_col.data <- new_col;
-                    remove_key t)
+                    let (updated, new_table) =
+                        Tst.insert name
+                        {length = curr_col.length - 1; data = new_col} table in
+                    if updated then remove_key new_table t
+                    else Failure (name ^ " is not a column in the table " ^ table_name)
                 else Failure "Key does not exist" in
-            remove_key cols
+            remove_key table_to_change cols
 
 
-let update_value (table_name: string) (column_name: string) (key_to_change: key)
+let update_value (db: database) (table_name: string) (column_name: string) (key_to_change: key)
     (value_to_add: value) : result =
     match Tst.get table_name db.data with
     | None -> Failure (table_name ^ " is not a table in the database")
     | Some table_to_change ->
-        match Tst.get column_name (!table_to_change) with
+        match Tst.get column_name table_to_change with
         | None -> Failure (column_name
             ^ " is not a column in the table " ^ table_name)
         | Some column_to_change ->
             let (updated, new_col) =
                 Bst.insert key_to_change value_to_add column_to_change.data in
             if updated then
-                (column_to_change.data <- new_col;
-                Success)
+                let (updated, new_table) =
+                    Tst.insert column_name
+                    {column_to_change with data = new_col} table_to_change in
+                if updated then
+                    let (updated, new_data) = Tst.insert table_name new_table db.data in
+                    if updated then
+                        Success (update {db with data = new_data} table_name)
+                    else Failure (table_name ^ " is not a table in the database")
+                else Failure (column_name ^ " is not a column in the table " ^ table_name)
             else Failure "Key does not exist"
 
 
-let get_column_names (table_name: string): result =
+let get_column_names (db: database) (table_name: string): result =
     match Tst.get table_name db.data with
     | None -> Failure (table_name ^ " is not a table in the database")
     | Some selected_table ->
         (* Cols is the associative list of col names and columns *)
-        let cols = Tst.list_tst (!selected_table) in
+        let cols = Tst.list_tst selected_table in
         if cols = [] then Failure ("No columns exist in table" ^ table_name)
         else
             let rec get_names = function
@@ -214,7 +198,7 @@ let get_column_names (table_name: string): result =
             | (names, _)::t -> names::(get_names t) in
             ColNames (get_names cols)
 
-
+(*
 let get_column_vals (table_name: string) (column_name: string)
     (to_add: value -> bool): result =
     match Tst.get table_name db.data with
