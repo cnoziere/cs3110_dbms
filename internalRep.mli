@@ -97,13 +97,9 @@ val get_row: database -> string -> string -> (value -> bool) -> result
  *)
 val get_values: database -> string -> string -> key list -> result
 
-(*
-
 (**
  * Create new table and populate with values
  * Input: table name, list of column names, list of values in each column
  * Precondition: list of column names must be the same length as list of value lists
  *)
 val create_whole_table: database -> string -> string list -> value list list -> result
-
-*)

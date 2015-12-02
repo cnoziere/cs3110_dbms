@@ -261,3 +261,11 @@ TEST "GET_TABLE_NAMES_success" =
 TEST_UNIT "PRINT_TABLE" =
     print_endline "PRINT_TABLE";
     print_table (reset myDB) "test_table"
+
+TEST_UNIT "CREATE_WHOLE_TABLE" =
+    print_endline "CREATE_WHOLE_TABLE";
+    let vals = [["a";"b";"c"]; ["1";"2";"3"]] in
+    match create_whole_table (reset myDB) "new_table" ["col1"; "col2"] vals with
+    | Success db -> print_table db "new_table"
+    | Failure msg -> print_endline msg; false
+    | _ -> false
