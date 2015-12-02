@@ -274,32 +274,32 @@ let create_whole_table (db: database) (table_name: string)
     else
     (* let (new_table: table) = Tst.create () in *)
     (* Add a list of list of values into list of columns *)
-    let rec add_cols table col_names values =
-        match col_names, values with
+    let rec add_cols (added_table: table) (cols: string list) (vals: value list list) =
+        match cols, vals with
         | [],[] ->
-            let (is_duplicate, new_data) = Tst.insert table_name table db.data in
+            let (is_duplicate, new_data) = Tst.insert table_name added_table db.data in
             if is_duplicate then
                 Failure "Table name already exists in database"
             else
                 Success (update {db with data = new_data} table_name)
         | col_name::next_names, val_lst::next_vals ->
             (* Add a list of values to a column *)
-            let rec add_vals (col: column) (vals: value list) =
-            match vals with
-            | [] ->
-                (* Insert col in table *)
-                let (is_duplicate, new_table) = Tst.insert col_name col new_table in
-                if is_duplicate then
-                    Failure "Duplicate column name used to initialize table"
-                else
-                    add_cols new_table next_names next_vals
-            | v:vs ->
-                (* Insert value v in column col *)
-                let (is_duplicate, new_col) = Bst.insert col.length v col.data in
-                if is_duplicate
-                    Failure "Duplicate key used to initialize table"
-                else
-                    add_vals {data = new_col; length = col.length + 1} vs
-            add_vals {data = Bst.create (); length = 0} val_list
+            let rec add_vals (col: column) (vals_to_add: value list) =
+                match vals_to_add with
+                | [] ->
+                    (* Insert col into a table *)
+                    let (is_duplicate, new_table) = Tst.insert col_name col added_table in
+                    if is_duplicate then
+                        Failure "Duplicate column name used to initialize table"
+                    else
+                        add_cols new_table next_names next_vals
+                | v::vs ->
+                    (* Insert value v in column col *)
+                    let (is_duplicate, new_col) = Bst.insert col.length v col.data in
+                    if is_duplicate then
+                        Failure "Duplicate key used to initialize table"
+                    else
+                        add_vals {data = new_col; length = col.length + 1} vs in
+            add_vals {data = Bst.create (); length = 0} val_lst
         | _,_ -> Failure "List of columns and values do not match" in
-    add_cols (Tst.create ()) col_names
+    add_cols (Tst.create ()) col_names values

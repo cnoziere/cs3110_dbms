@@ -6,7 +6,10 @@ open Async.Std
  * methods to read and modify the stored data
  *)
 
-(* [reset] is a function for testing only to simplify database set-up *)
+(**
+ * [reset] is a function for testing only to simplify database set-up 
+ * resets the database with an unfilled Ivar to allow reuse during testing
+ *)
 val reset: database -> database
 
 (**
