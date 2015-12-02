@@ -1,7 +1,12 @@
 open Types
 
+let db =
+  match InternalRep.create_database "simplest_db" with
+    | Success db -> db
+    | _ -> failwith "Will not occur"
+
 TEST "concat_failures on all Success (would never be called in Operation)" =
-  Operation.concat_failures [Success; Success; Success; Success] ""
+  Operation.concat_failures [Success(db); Success(db); Success(db); Success(db)] ""
   = Failure("")
 
 TEST "concat_failures on all Failure" =
@@ -9,21 +14,21 @@ TEST "concat_failures on all Failure" =
   = Failure(" a b c")
 
 TEST "concat_failures on mixed" =
-  Operation.concat_failures [Failure("a"); Success; Failure("b");
+  Operation.concat_failures [Failure("a"); Success(db); Failure("b");
                              Failure("c")] ""
   = Failure(" a b c")
 
 
 TEST "check_failures on all Success" =
-  Operation.check_failures [Success; Success; Success; Success]
-  = Success
+  Operation.check_failures [Success(db); Success(db); Success(db); Success(db)]
+  = Success(db)
 
 TEST "check_failures on all Failure" =
   Operation.check_failures [Failure("a"); Failure("b"); Failure("c")]
   = Failure(" a b c")
 
 TEST "check_failures on mixed" =
-  Operation.check_failures [Failure("a"); Success; Failure("b"); Failure("c")]
+  Operation.check_failures [Failure("a"); Success(db); Failure("b"); Failure("c")]
   = Failure(" a b c")
 
 

@@ -79,17 +79,17 @@ let help params = match params with
 
 let load params = match params with
   | [] -> PFailure("Error LOAD: no filename.")
-  | h::[] -> ReadJson.read_db h
+  | h::[] -> Failure("TODO!!!!! ReadJson.read_db h")
   | _ -> PFailure("Error LOAD: too many parameters.")
 
-let create_table params = match params with
+let create_table db params = match params with
   | [] -> PFailure("Error CREATE TABLE: no table name.")
   | h::[] -> PFailure("Error CREATE TABLE: no column names.")
-  | h::t -> Operation.create_table h t
+  | h::t -> Operation.create_table db h t
 
-let drop_table params = match params with
+let drop_table db params = match params with
   | [] -> PFailure("Error DROP TABLE: no tablename.")
-  | h::[] -> Operation.drop_table h
+  | h::[] -> Operation.drop_table db h
   | _ -> PFailure("Error DROP TABLE: too many parameters.")
 
 (**
@@ -98,7 +98,7 @@ let drop_table params = match params with
  *   [val1; val2; ...]
  * Then check validity of lists and call Operation or return Parse Failure.
  *)
-let insert_into params =
+let insert_into db params =
   let rec split_lists lst is_before cols vals = match lst with
     | [] -> (cols, vals)
     | h::t when is_before -> begin
@@ -117,7 +117,7 @@ let insert_into params =
         else if vals=[] then PFailure("Error INSERT INTO: no values.")
         else if (List.length cols)<>(List.length vals) then
           PFailure("Error INSERT INTO: number of columns does not match values.")
-        else Operation.add_row h cols vals
+        else Operation.add_row db h cols vals
       end
 
 (**
@@ -163,7 +163,7 @@ let parse_where lst =
  * Validate tablename, parse where conditions, and return Parse Failure or
  *    call Operation.
  *)
-let delete_from params =
+let delete_from db params =
   let parse_from params = match params with
     | [] -> PFailure("Error DELETE FROM: no tablename.")
     | h::[] -> PFailure("Error DELETE FROM: no WHERE conditions.")
@@ -173,13 +173,13 @@ let delete_from params =
         let where = parse_where t in
         (match where with
           | None -> PFailure("Error DELETE FROM: invalid WHERE conditions.")
-          | Some(c,o,v) -> Operation.delete_row h (Some(c,o,v))
+          | Some(c,o,v) -> Operation.delete_row db h (Some(c,o,v))
         )
       end
     | _ -> PFailure("Error DELETE FROM: parameters must match [tablename WHERE].") in
   match params with
     | h::ha::hb::[] when h="*"&&(String.lowercase ha)="from" ->
-        Operation.delete_row hb None
+        Operation.delete_row db hb None
     | h::ha::t when h="*"&&(String.lowercase ha)="from" ->
         PFailure("Error DELETE FROM: too many tablename parameters.")
     | h::t when (String.lowercase h)="from" -> parse_from t
@@ -194,7 +194,7 @@ let delete_from params =
  * Then check validity of col and val lists. Return Parse Failure or
  *   call Operation depending on type where
  *)
-let update params =
+let update db params =
   let rec split_lists lst is_before pairs where = match lst with
     | [] -> (pairs, where)
     | h::t when is_before -> begin
@@ -239,7 +239,7 @@ let update params =
           PFailure("Error UPDATE: invalid SET")
         else (match where with
           | None -> PFailure("Error UPDATE: invalid WHERE")
-          | Some(c,o,v) -> Operation.update h new_cols new_vals (Some(c,o,v))
+          | Some(c,o,v) -> Operation.update db h new_cols new_vals (Some(c,o,v))
         )
     | h::t -> PFailure("Error UPDATE: must match SET and WHERE.")
 
@@ -250,7 +250,7 @@ let update params =
  *   and [tablename]
  * Then check validity of lists and call Operation or return Parse Failure.
  *)
-let select params =
+let select db params =
   let rec split_lists lst is_before cols tname = match lst with
     | [] -> (cols, tname)
     | h::t when is_before -> begin
@@ -265,23 +265,23 @@ let select params =
     if col=[] then PFailure("Error SELECT: no column names.") else
     (match tname with
       | [] -> PFailure("Error SELECT: no tablename.")
-      | h::[] -> Operation.select h (Some(col)) None
+      | h::[] -> Operation.select db h (Some(col)) None
       | h::ha::t when (String.lowercase ha)="where" ->
           (let where = parse_where t in
           (match where with
             | None -> PFailure("Error SELECT: invalid WHERE conditions.")
-            | Some(c,o,v) -> Operation.select h (Some(col)) (Some(c,o,v))
+            | Some(c,o,v) -> Operation.select db h (Some(col)) (Some(c,o,v))
           ))
       | _ -> PFailure("Error SELECT: too many tablename parameters.")) in
   match params with
     | [] -> PFailure("Error SELECT: no columns or values.")
     | h::ha::hb::[] when h="*"&&(String.lowercase ha)="from" ->
-        Operation.select hb None None
+        Operation.select db hb None None
     | h::ha::hb::hc::t when h="*"&&(String.lowercase ha)="from"&&(String.lowercase hc)="where" ->
         let where = parse_where t in
         (match where with
           | None -> PFailure("Error SELECT: invalid WHERE conditions.")
-          | Some(c,o,v) -> Operation.select hb None (Some(c,o,v)))
+          | Some(c,o,v) -> Operation.select db hb None (Some(c,o,v)))
     | h::ha::t when h="*"&&(String.lowercase ha)="from" ->
         PFailure("Error SELECT: invalid tablename parameters.")
     | xs -> parse_lists xs
@@ -289,9 +289,9 @@ let select params =
 (**
  * Gets an entire table as an OpColumn result, to be printed by print_result.
  *)
-let print name = match name with
+let print db name = match name with
   | [] -> PFailure("Error PRINT: no table name.")
-  | h::[] -> Operation.get_table h
+  | h::[] -> Operation.get_table db h
   | _ -> PFailure("Error PRINT: too many parameters.")
 
 (**
@@ -299,22 +299,41 @@ let print name = match name with
  * All keywords are case insensitive.
  *)
 
-let evaluate input =
+let evaluate_db db input =
   let word_lst = Str.split (Str.regexp "[ \t,()]+") input in
   match word_lst with
     | h::t when (String.lowercase h)="exit" -> exit t
     | h::t when (String.lowercase h)="help" -> (help t, true)
     | h::t when (String.lowercase h)="load" -> (load t, true)
     | h::ha::t when (String.lowercase h)="create"&&(String.lowercase ha)="table" ->
-        (create_table t, true)
+        (create_table db t, true)
     | h::ha::t when (String.lowercase h)="drop"&&(String.lowercase ha)="table" ->
-        (drop_table t, true)
+        (drop_table db t, true)
     | h::ha::t when (String.lowercase h)="insert"&&(String.lowercase ha)="into" ->
-        (insert_into t, true)
-    | h::t when (String.lowercase h)="delete" -> (delete_from t, true)
-    | h::t when (String.lowercase h)="update" -> (update t, true)
-    | h::t when (String.lowercase h)="select" -> (select t, true)
-    | h::t when (String.lowercase h)="print" -> (print t, true)
+        (insert_into db t, true)
+    | h::t when (String.lowercase h)="delete" -> (delete_from db t, true)
+    | h::t when (String.lowercase h)="update" -> (update db t, true)
+    | h::t when (String.lowercase h)="select" -> (select db t, true)
+    | h::t when (String.lowercase h)="print" -> (print db t, true)
+    | _ -> (PFailure("Error: command not recognized."), true)
+
+let evaluate input =
+  let db_fail = (PFailure("Error: must load or create a database first."), true) in
+  let word_lst = Str.split (Str.regexp "[ \t,()]+") input in
+  match word_lst with
+    | h::t when (String.lowercase h)="exit" -> exit t
+    | h::t when (String.lowercase h)="help" -> (help t, true)
+    | h::t when (String.lowercase h)="load" -> (load t, true)
+    | h::ha::t when (String.lowercase h)="create"&&(String.lowercase ha)="table" ->
+        db_fail
+    | h::ha::t when (String.lowercase h)="drop"&&(String.lowercase ha)="table" ->
+        db_fail
+    | h::ha::t when (String.lowercase h)="insert"&&(String.lowercase ha)="into" ->
+        db_fail
+    | h::t when (String.lowercase h)="delete" -> db_fail
+    | h::t when (String.lowercase h)="update" -> db_fail
+    | h::t when (String.lowercase h)="select" -> db_fail
+    | h::t when (String.lowercase h)="print" -> db_fail
     | _ -> (PFailure("Error: command not recognized."), true)
 
 (** Functions to print results from evaluation. *)
@@ -349,7 +368,7 @@ let print_cols col_lst =
   List.iter print_row rows
 
 let print_result res = match res with
-  | Success -> Printf.printf "%s\n" "Success"
+  | Success _ -> Printf.printf "%s\n" "Success"
   | Failure x -> Printf.printf "%s\n" x
   | PMessage x -> Printf.printf "%s\n" x
   | PFailure x -> Printf.printf "%s\n" x
@@ -361,13 +380,27 @@ let print_result res = match res with
  * Calls helper functions to Evaluate and Print.
  *)
 
+let rec repl_db db =
+  let () = Printf.printf "\n> " in
+  let input = read_line () in
+  let evaluated = evaluate_db db input in
+  let () = print_result (fst evaluated) in
+  let continue = snd evaluated in
+  let database = match (fst evaluated) with | Success x -> x | _ -> db in
+  if continue then repl_db database else ()
+
 let rec repl () =
   let () = Printf.printf "\n> " in
   let input = read_line () in
   let evaluated = evaluate input in
   let () = print_result (fst evaluated) in
   let continue = snd evaluated in
-  if continue then repl() else ()
+  let database = match (fst evaluated) with | Success x -> Some x | _ -> None in
+  if continue then
+    match database with
+      | Some x -> repl_db x
+      | None -> repl()
+  else ()
 
 let start_repl () =
   let () = Printf.printf "\n%s"
