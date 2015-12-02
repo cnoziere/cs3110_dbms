@@ -11,7 +11,8 @@ let rec one_by_one (db : database) f = function
                 | _ -> failwith "This should never pattern match")
 
 let ok_to_create_database (dbname : string) =
-    let res = not (Sys.file_exists dbname) in
+    let path = "./" ^ dbname ^ "/" ^ dbname ^ ".json" in
+    let res = not (Sys.file_exists path) in
     if res then Unix.mkdir dbname 0o666 else ();
     res
 
@@ -83,7 +84,8 @@ let create_database (dbname: string) json =
     with
     | None -> Failure ("Cannot parse database " ^ dbname ^ ".\n")
     | Some (dbname, tables) -> (match InternalRep.create_database dbname with
-                                | Success db -> one_by_one db (load_table db dbname) tables
+                                | Success db -> UpdateJson.watch_for_update db;
+                                                one_by_one db (load_table db dbname) tables
                                 | Failure s -> Failure s
                                 | _ -> failwith "This should never pattern match")
 
@@ -97,8 +99,6 @@ let load_db (dbname : string) =
     with
     | None -> Failure ("Cannot find/parse the file at the following path: " ^ path ^ "\n")
     | Some json -> create_database dbname json
-
-
 
 (* CHECK ALL FAILWITH NOOOOO *)
 (* TO COMPILE: cs3110 compile -t -p async -p yojson readJson.ml *)
