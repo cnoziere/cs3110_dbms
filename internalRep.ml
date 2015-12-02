@@ -198,13 +198,13 @@ let get_column_names (db: database) (table_name: string): result =
             | (names, _)::t -> names::(get_names t) in
             ColNames (get_names cols)
 
-(*
-let get_column_vals (table_name: string) (column_name: string)
+
+let get_column_vals (db: database) (table_name: string) (column_name: string)
     (to_add: value -> bool): result =
     match Tst.get table_name db.data with
     | None -> Failure (table_name ^ " is not a table in the database")
     | Some selected_table ->
-        match Tst.get column_name (!selected_table) with
+        match Tst.get column_name selected_table with
         | None -> Failure (column_name
             ^ " is not a column in the table " ^ table_name)
         | Some selected_col ->
@@ -217,18 +217,18 @@ let get_column_vals (table_name: string) (column_name: string)
 
 exception Empty_table
 
-let get_row (table_name: string) (column_name: string)
+let get_row (db: database) (table_name: string) (column_name: string)
     (to_add: value -> bool): result =
     match Tst.get table_name db.data with
     | None -> Failure (table_name ^ " is not a table in the database")
     | Some selected_table ->
         try
             let column_name = if column_name = "" then
-                match Tst.list_tst (!selected_table) with
+                match Tst.list_tst selected_table with
                 | [] -> raise Empty_table (* Not possible due to parser check *)
                 | (x,_)::t -> x
             else column_name in
-            match Tst.get column_name (!selected_table) with
+            match Tst.get column_name selected_table with
             | None -> Failure (column_name
                 ^ " is not a column in the table " ^ table_name)
             | Some selected_col ->
@@ -243,11 +243,11 @@ let get_row (table_name: string) (column_name: string)
 
 exception Key_not_found of key
 
-let get_values (table_name: string) (column_name: string) (keys: key list): result =
+let get_values (db: database) (table_name: string) (column_name: string) (keys: key list): result =
     match Tst.get table_name db.data with
     | None -> Failure (table_name ^ " is not a table in the database")
     | Some selected_table ->
-        match Tst.get column_name (!selected_table) with
+        match Tst.get column_name selected_table with
         | None -> Failure (column_name
             ^ " is not a column in the table " ^ table_name)
         | Some selected_col ->
@@ -263,5 +263,3 @@ let get_values (table_name: string) (column_name: string) (keys: key list): resu
             with
                 | Key_not_found k -> (Failure ("The key " ^ string_of_int k
                     ^ " does not exist in the table " ^ table_name))
-
-*)

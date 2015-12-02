@@ -75,33 +75,35 @@ val update_value: database -> string -> string -> key -> value -> result
  * Given the table name, return result of ColName, a string list of column names
  *)
 val get_column_names: database -> string -> result
-(*
+
 (**
  * Given the table name, the column name, and a function (value -> bool), return
  * values in the column that satisfy the function (result Column of value list)
  * To return all values in a column, input a function that always returns true
  * Returns result of Failure if table or column names do not exist
  *)
-val get_column_vals: string -> string -> (value -> bool) -> result
+val get_column_vals: database -> string -> string -> (value -> bool) -> result
 
 (**
  * Given the table name, the column name, and a function (value -> bool), return
  * the keys for all values that satisfy the function
  * Given an empty column name "", [get_row] returns all keys
  *)
-val get_row: string -> string -> (value -> bool) -> result
+val get_row: database -> string -> string -> (value -> bool) -> result
 
 (**
  * Given the table name, the column name, and a list of keys, return the values
  * in the column corresponding to the keys
  *)
-val get_values: string -> string -> key list -> result
+val get_values: database -> string -> string -> key list -> result
+
+(*
 
 (**
  * Create new table and populate with values
  * Input: table name, list of column names, list of values in each column
  * Precondition: list of column names must be the same length as list of value lists
-val create_whole_table: string -> string list -> value list list -> result
  *)
+val create_whole_table: database -> string -> string list -> value list list -> result
 
 *)
