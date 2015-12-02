@@ -79,8 +79,21 @@ let help params = match params with
 
 let load params = match params with
   | [] -> PFailure("Error LOAD: no filename.")
-  | h::[] -> Failure("TODO!!!!! ReadJson.read_db h")
+  | h::[] -> begin
+      (*if ReadJson.ok_to_create_database h then ReadJson.read_db h
+      else Failure("Database "^h^" already exists.")*)
+      Failure("TODO!!!!!!!!! call ReadJson")
+    end
   | _ -> PFailure("Error LOAD: too many parameters.")
+
+let create_database params = match params with
+  | [] -> PFailure("Error CREATE DATABASE: no name.")
+  | h::[] -> begin
+      (*if ReadJson.ok_to_create_database h then Operation.create_database h
+      else Failure("Database "^h^" already exists.") TODO!!!!*)
+      Operation.create_database h
+    end
+  | _ -> PFailure("Error CREATE DATABASE: too many parameters.")
 
 let create_table db params = match params with
   | [] -> PFailure("Error CREATE TABLE: no table name.")
@@ -305,6 +318,8 @@ let evaluate_db db input =
     | h::t when (String.lowercase h)="exit" -> exit t
     | h::t when (String.lowercase h)="help" -> (help t, true)
     | h::t when (String.lowercase h)="load" -> (load t, true)
+    | h::ha::t when (String.lowercase h)="create"&&(String.lowercase ha)="database" ->
+        (create_database t, true)
     | h::ha::t when (String.lowercase h)="create"&&(String.lowercase ha)="table" ->
         (create_table db t, true)
     | h::ha::t when (String.lowercase h)="drop"&&(String.lowercase ha)="table" ->
@@ -324,6 +339,8 @@ let evaluate input =
     | h::t when (String.lowercase h)="exit" -> exit t
     | h::t when (String.lowercase h)="help" -> (help t, true)
     | h::t when (String.lowercase h)="load" -> (load t, true)
+    | h::ha::t when (String.lowercase h)="create"&&(String.lowercase ha)="database" ->
+        (create_database t, true)
     | h::ha::t when (String.lowercase h)="create"&&(String.lowercase ha)="table" ->
         db_fail
     | h::ha::t when (String.lowercase h)="drop"&&(String.lowercase ha)="table" ->

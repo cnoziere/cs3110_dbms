@@ -15,6 +15,50 @@ let is_database_result res = match res with
   | Failure _ -> true
   | _ -> true
 
+
+TEST "NO DB EXIT invalid" =
+  is_parser_fail (fst (Parser.evaluate "EXIT extra params"))
+
+TEST "NO DB EXIT valid caps" =
+  is_parser_message (fst (Parser.evaluate "EXIT"))
+
+TEST "NO DB EXIT valid lowercase" =
+  is_parser_message (fst (Parser.evaluate "exit"))
+
+
+TEST "NO DB HELP invalid" =
+  is_parser_fail (fst (Parser.evaluate "HELP extra params"))
+
+TEST "NO DB HELP valid caps" =
+  is_parser_message (fst (Parser.evaluate "HELP"))
+
+TEST "NO DB HELP valid lowercase" =
+  is_parser_message (fst (Parser.evaluate "help"))
+
+
+TEST "NO DB LOAD invalid no params" =
+  is_parser_fail (fst (Parser.evaluate "LOAD"))
+
+TEST "NO DB LOAD invalid extra params" =
+  is_parser_fail (fst (Parser.evaluate "LOAD extra params"))
+
+TEST "NO DB LOAD valid caps" =
+  is_database_result (fst (Parser.evaluate "LOAD filename"))
+
+TEST "NO DB LOAD valid lowercase" =
+  is_database_result (fst (Parser.evaluate "load filename"))
+
+
+TEST "NO DB CREATE DATABASE invalid no params" =
+  is_parser_fail (fst (Parser.evaluate "CREATE DATABASE"))
+
+TEST "NO DB CREATE DATABASE valid caps" =
+  is_database_result (fst (Parser.evaluate "CREATE DATABASE name"))
+
+TEST "NO DB CREATE DATABASE valid lowercase" =
+  is_database_result (fst (Parser.evaluate "create database name"))
+
+
 let db =
   match InternalRep.create_database "simplest_db" with
     | Success db -> db
@@ -159,8 +203,8 @@ TEST "UPDATE invalid WHERE no equals" =
   is_parser_fail (fst (Parser.evaluate_db (InternalRep.reset db)
     "UPDATE tname SET (col1='val1') WHERE col 'val'"))
 
-TEST "UPDATE valid no WHERE" =
-  is_database_result (fst (Parser.evaluate_db (InternalRep.reset db)
+TEST "UPDATE invalid no WHERE" =
+  is_parser_fail (fst (Parser.evaluate_db (InternalRep.reset db)
     "UPDATE tname SET (col1='val1', col2='val2')"))
 
 TEST "UPDATE valid with WHERE" =

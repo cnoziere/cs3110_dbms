@@ -1,6 +1,11 @@
 open Types
 
 (**
+ * Creates a database, given the database name. Returns Success or Failure.
+ *)
+val create_database : string -> result
+
+(**
  * Creates a table, given the table name and list of column names.
  * Returns a type result.
  *)

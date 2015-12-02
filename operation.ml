@@ -24,6 +24,11 @@ let filter_columns results =
   then concat_failures results "" else concat_columns results []
 
 (**
+ * Creates a database, given the database name. Returns Success or Failure.
+ *)
+let create_database dbname = InternalRep.create_database dbname
+
+(**
  * Creates a table, given the table name and list of column names.
  * Returns a result of Success or Failure.
  *)
