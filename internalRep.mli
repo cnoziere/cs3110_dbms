@@ -6,7 +6,10 @@ open Async.Std
  * methods to read and modify the stored data
  *)
 
-(* [reset] is a function for testing only to simplify database set-up *)
+(**
+ * [reset] is a function for testing only to simplify database set-up 
+ * resets the database with an unfilled Ivar to allow reuse during testing
+ *)
 val reset: database -> database
 
 (**
@@ -97,13 +100,9 @@ val get_row: database -> string -> string -> (value -> bool) -> result
  *)
 val get_values: database -> string -> string -> key list -> result
 
-(*
-
 (**
  * Create new table and populate with values
  * Input: table name, list of column names, list of values in each column
  * Precondition: list of column names must be the same length as list of value lists
  *)
 val create_whole_table: database -> string -> string list -> value list list -> result
-
-*)
