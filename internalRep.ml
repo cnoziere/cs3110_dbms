@@ -6,8 +6,12 @@ open Async.Std
  * fills the Ivar in the database (the deferred read in [updated]
  * becomes determined), and fills the new updated field with an empty Ivar
  *)
-let update (db: database) (table_name: string) =
-    let new_db = {db with updated = Ivar.create ()} in
+let update_data (db: database) (new_data: table Tst.tree) (table_name: string) =
+    let new_db = {
+        name = db.name;
+        data = new_data;
+        updated = Ivar.create ();
+    } in
     Ivar.fill db.updated (new_db, table_name);
     new_db
 
@@ -47,7 +51,7 @@ let create_table (db: database) (table_name: string) (col_names: string list) =
             if is_duplicate then
                 Failure "Table name already exists in database"
             else
-                Success (update {db with data = new_data} table_name)
+                Success (update_data db new_data table_name)
         | h::t ->
             let (new_column: column) = {data = Bst.create (); last_index = 0} in
             let (is_duplicate, new_table) = Tst.insert h new_column table in
@@ -70,7 +74,7 @@ let get_table_names (db: database): string list =
 let drop_table (db: database) (table_to_drop: string): result =
     let (success, new_data) = Tst.remove table_to_drop db.data in
     if success then
-        Success (update {db with data = new_data} table_to_drop)
+        Success (update_data db new_data table_to_drop)
     else
         Failure (table_to_drop ^ " is not a table in the database")
 
@@ -105,7 +109,7 @@ let add_row (db: database) (table_name: string) (cols_to_change: string list)
             | [] ->
                 let (updated, new_data) = Tst.insert table_name table db.data in
                 if updated then
-                    Success (update {db with data = new_data} table_name)
+                    Success (update_data db new_data table_name)
                 else
                     Failure (table_name ^ " is not a table in the database")
             | (name, curr_col)::t ->
@@ -150,7 +154,7 @@ let delete_row (db: database) (table_name: string) (key_to_delete: key) =
                     let (updated, new_data) =
                         Tst.insert table_name table db.data in
                     if updated then
-                        Success (update {db with data = new_data} table_name)
+                        Success (update_data db new_data table_name)
                     else
                         Failure (table_name ^ " is not a table in the database")
                 | (name, curr_col)::t ->
@@ -190,7 +194,7 @@ let update_value (db: database) (table_name: string) (column_name: string)
                     let (updated, new_data) =
                         Tst.insert table_name new_table db.data in
                     if updated then
-                        Success (update {db with data = new_data} table_name)
+                        Success (update_data db new_data table_name)
                     else
                         Failure (table_name ^ " is not a table in the database")
                 else
@@ -299,7 +303,7 @@ let create_whole_table (db: database) (table_name: string)
             if is_duplicate then
                 Failure "Table name already exists in database"
             else
-                Success (update {db with data = new_data} table_name)
+                Success (update_data db new_data table_name)
         | col_name::next_names, val_lst::next_vals ->
             (* Add a list of values to a column *)
             let rec add_vals (col: column) (vals_to_add: value list) =

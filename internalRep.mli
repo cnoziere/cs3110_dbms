@@ -7,7 +7,7 @@ open Async.Std
  *)
 
 (**
- * [reset] is a function for testing only to simplify database set-up 
+ * [reset] is a function for testing only to simplify database set-up
  * resets the database with an unfilled Ivar to allow reuse during testing
  *)
 val reset: database -> database
@@ -80,8 +80,8 @@ val update_value: database -> string -> string -> key -> value -> result
 val get_column_names: database -> string -> result
 
 (**
- * Given the table name, the column name, and a function (value -> bool), return
- * values in the column that satisfy the function (result Column of value list)
+ * Given the table name, the column name, and a function, return
+ * result = Column of value list (values in the column that satisfy the function)
  * To return all values in a column, input a function that always returns true
  * Returns result of Failure if table or column names do not exist
  *)
