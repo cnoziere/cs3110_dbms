@@ -1,20 +1,16 @@
 (* This module handles the creation of databases and tables from json files *)
 open Types
-open Operation
 open Yojson.Basic
 
-let rec one_by_one (db : database) f = function
-  | [] -> Success db
-  | hd :: tl -> (match f hd with
-                | Success _ -> one_by_one db f tl
-                | Failure s -> Failure s
-                | _ -> failwith "This should never pattern match")
-
 let ok_to_create_database (dbname : string) =
+  let open Async.Std in
     let path = "./" ^ dbname ^ "/" ^ dbname ^ ".json" in
-    let res = not (Sys.file_exists path) in
-    if res then Unix.mkdir dbname 0o777 else ();
-    res
+    (Sys.file_exists_exn path) >>= (fun b ->
+      if b then return false
+      else (Unix.mkdir (~perm:0o777) dbname >>= fun () ->
+      Writer.open_file path >>=
+      fun t -> Writer.write t (pretty_to_string `Null); Writer.close t >>=
+      fun () -> return true))
 
 let to_string_list json =
     let open Yojson.Basic.Util in
@@ -80,7 +76,7 @@ let no_failure f = function
     | Success db -> f db
     | _ -> failwith "This should never pattern match"
 
-let create_database (dbname: string) json =
+let create_db (dbname: string) json =
     let open Yojson.Basic.Util in
     match
       (try
@@ -111,7 +107,7 @@ let load_db (dbname : string) =
       Some (Yojson.Basic.from_file path)
       with _ -> None)
     with
-    | Some json -> create_database dbname json
+    | Some json -> create_db dbname json
     | None -> Failure ("Cannot parse the following file: " ^ path ^ "\n")
 
 (* let delete_tables db json (path : string) =

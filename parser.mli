@@ -11,13 +11,13 @@ open Async.Std
  * Matches user input to find appropriate command to call from ReadJSON or
  * Operation. Used when a database is initialized.
  *)
-val evaluate_db : database -> string -> (result * bool)
+val evaluate_db : database -> string -> (result * bool) Deferred.t
 
 (**
  * Matches user input to find appropriate command to call from ReadJSON or
  * Operation. Used when no database has been initialized.
  *)
-val evaluate : string -> (result * bool)
+val evaluate : string -> (result * bool) Deferred.t
 
 (**
  * Display results with a readable format in the terminal.

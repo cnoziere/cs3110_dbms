@@ -90,18 +90,17 @@ let load params = match params with
   | _ -> PFailure("Error LOAD: too many parameters.")
 
 let create_database params = match params with
-  | [] -> PFailure("Error CREATE DATABASE: no name.")
-  | h::[] -> begin
-      if ReadJson.ok_to_create_database h then begin
+  | [] -> return (PFailure "Error CREATE DATABASE: no name.")
+  | h::[] ->
+      ReadJson.ok_to_create_database h >>= fun b ->
+      if b then
         let res = Operation.create_database h in
         (match res with
           | Success db -> UpdateJson.watch_for_update db
           | _ -> ());
-        res
-      end
-      else Failure("Database " ^ h ^ " already exists.")
-    end
-  | _ -> PFailure("Error CREATE DATABASE: too many parameters.")
+        return res
+      else return (Failure ("Database " ^ h ^ " already exists."))
+  | _ -> return (PFailure "Error CREATE DATABASE: too many parameters.")
 
 let create_table db params = match params with
   | [] -> PFailure("Error CREATE TABLE: no table name.")
@@ -122,24 +121,23 @@ let drop_table db params = match params with
 let insert_into db params =
   let rec split_lists lst is_before cols vals = match lst with
     | [] -> (cols, vals)
-    | h::t when is_before -> begin
-        if (String.lowercase h)="values" then split_lists t false cols vals
-        else split_lists t true (cols@[h]) vals
-      end
-    | h::t -> split_lists t false cols (vals@[h]) in
+    | h::t when is_before ->
+        if (String.lowercase h) = "values" then split_lists t false cols vals
+        else split_lists t true (cols @ [h]) vals
+    | h::t -> split_lists t false cols (vals @ [h]) in
+
   match params with
     | [] -> PFailure("Error INSERT INTO: no tablename.")
     | h::[] -> PFailure("Error INSERT INTO: no columns or values.")
-    | h::t -> begin
+    | h::t ->
         let lists = split_lists t true [] [] in
         let cols = fst lists in
         let vals = snd lists in
-        if cols=[] then PFailure("Error INSERT INTO: no column names.")
-        else if vals=[] then PFailure("Error INSERT INTO: no values.")
-        else if (List.length cols)<>(List.length vals) then
+        if cols = [] then PFailure("Error INSERT INTO: no column names.")
+        else if vals = [] then PFailure("Error INSERT INTO: no values.")
+        else if (List.length cols) <> (List.length vals) then
           PFailure("Error INSERT INTO: number of columns does not match values.")
         else Operation.add_row db h cols vals
-      end
 
 (**
  * Helper function to parse WHERE statements.
@@ -147,7 +145,7 @@ let insert_into db params =
  * Returns None for invalid forms, Some (col_name, op, value)
  *)
 let parse_where lst =
-  if lst=[] then None else
+  if lst = [] then None else
   let param_str = String.concat "" lst in
 
   let eq  =   Str.regexp ("\\([A-Za-z0-9]+=[A-Za-z0-9]+\\)" ^ "$") in
@@ -189,20 +187,19 @@ let delete_from db params =
     | h::[] -> PFailure("Error DELETE FROM: no WHERE conditions.")
     | h::ha::[] when (String.lowercase ha)="where" ->
         PFailure("Error DELETE FROM: no WHERE conditions.")
-    | h::ha::t when (String.lowercase ha)="where" -> begin
+    | h::ha::t when (String.lowercase ha)="where" ->
         let where = parse_where t in
         (match where with
           | None -> PFailure("Error DELETE FROM: invalid WHERE conditions.")
-          | Some(c,o,v) -> Operation.delete_row db h (Some(c,o,v))
-        )
-      end
+          | Some(c,o,v) -> Operation.delete_row db h (Some(c,o,v)))
     | _ -> PFailure("Error DELETE FROM: parameters must match [tablename WHERE].") in
+
   match params with
-    | h::ha::hb::[] when h="*"&&(String.lowercase ha)="from" ->
+    | h::ha::hb::[] when h = "*" && (String.lowercase ha) = "from" ->
         Operation.delete_row db hb None
-    | h::ha::t when h="*"&&(String.lowercase ha)="from" ->
+    | h::ha::t when h = "*" && (String.lowercase ha) = "from" ->
         PFailure("Error DELETE FROM: too many tablename parameters.")
-    | h::t when (String.lowercase h)="from" -> parse_from t
+    | h::t when (String.lowercase h) = "from" -> parse_from t
     | _ -> PFailure("Error DELETE FROM: invalid parameters.")
 
 (**
@@ -217,11 +214,12 @@ let delete_from db params =
 let update db params =
   let rec split_lists lst is_before pairs where = match lst with
     | [] -> (pairs, where)
-    | h::t when is_before -> begin
-        if (String.lowercase h)="where" then split_lists t false pairs where
-        else split_lists t true (pairs@[h]) where
-      end
-    | h::t -> split_lists t false pairs (where@[h]) in
+    | h::t when is_before ->
+        if (String.lowercase h) = "where"
+        then split_lists t false pairs where
+        else split_lists t true (pairs @ [h]) where
+    | h::t -> split_lists t false pairs (where @ [h]) in
+
   let split_set set =
     let match_fst = Str.regexp "\\([A-Za-z0-9]+=\\)" in
     let match_snd = Str.regexp "\\(='[A-Za-z0-9]+'\\)" in
@@ -230,11 +228,11 @@ let update db params =
     let rec clean lst result = match lst with
       | [] -> result
       | h::t when Str.string_match match_fst h 0 ->
-          clean t (Str.split split_on h)@result
+          clean t (Str.split split_on h) @ result
       | h::t when Str.string_match match_snd h 0 ->
-          clean t (Str.split split_on h)@result
+          clean t (Str.split split_on h) @ result
       | h::t when Str.string_match match_all h 0 ->
-          clean t (Str.split split_on h)@result
+          clean t (Str.split split_on h) @ result
       | _ -> [] in
     let rec extract lst cols vals = match lst with
       | [] -> (cols, vals)
@@ -242,10 +240,11 @@ let update db params =
       | _ -> ([], []) in
     let cleaned = clean set [] in
     extract cleaned [] [] in
+
   match params with
     | [] -> PFailure("Error UPDATE: no tablename.")
     | h::[] -> PFailure("Error UPDATE: no columns or values.")
-    | h::ha::t when (String.lowercase ha)="set"->
+    | h::ha::t when (String.lowercase ha) = "set"->
         let lists = split_lists t true [] [] in
         let set = fst lists in
         let after_where = snd lists in
@@ -253,14 +252,13 @@ let update db params =
         let new_cols = fst parsed_set in
         let new_vals = snd parsed_set in
         let where = parse_where after_where in
-        if new_cols=[] then PFailure("Error UPDATE: invalid SET")
-        else if new_vals=[] then PFailure("Error UPDATE: invalid SET")
-        else if (List.length new_cols)<>(List.length new_vals) then
+        if new_cols = [] then PFailure("Error UPDATE: invalid SET")
+        else if new_vals = [] then PFailure("Error UPDATE: invalid SET")
+        else if (List.length new_cols) <> (List.length new_vals) then
           PFailure("Error UPDATE: invalid SET")
         else (match where with
           | None -> PFailure("Error UPDATE: invalid WHERE")
-          | Some(c,o,v) -> Operation.update db h new_cols new_vals (Some(c,o,v))
-        )
+          | Some(c,o,v) -> Operation.update db h new_cols new_vals (Some(c,o,v)))
     | h::t -> PFailure("Error UPDATE: must match SET and WHERE.")
 
 (**
@@ -274,35 +272,34 @@ let select db params =
   let rec split_lists lst is_before cols tname = match lst with
     | [] -> (cols, tname)
     | h::t when is_before -> begin
-        if (String.lowercase h)="from" then split_lists t false cols tname
-        else split_lists t true (cols@[h]) tname
+        if (String.lowercase h) = "from" then split_lists t false cols tname
+        else split_lists t true (cols @ [h]) tname
       end
-    | h::t -> split_lists t false cols (tname@[h]) in
+    | h::t -> split_lists t false cols (tname @ [h]) in
   let parse_lists params =
     let lists = split_lists params true [] [] in
     let col = fst lists in
     let tname = snd lists in
-    if col=[] then PFailure("Error SELECT: no column names.") else
+    if col = [] then PFailure("Error SELECT: no column names.") else
     (match tname with
       | [] -> PFailure("Error SELECT: no tablename.")
       | h::[] -> Operation.select db h (Some(col)) None
-      | h::ha::t when (String.lowercase ha)="where" ->
+      | h::ha::t when (String.lowercase ha) = "where" ->
           (let where = parse_where t in
           (match where with
             | None -> PFailure("Error SELECT: invalid WHERE conditions.")
-            | Some(c,o,v) -> Operation.select db h (Some(col)) (Some(c,o,v))
-          ))
+            | Some(c,o,v) -> Operation.select db h (Some(col)) (Some(c,o,v))))
       | _ -> PFailure("Error SELECT: too many tablename parameters.")) in
   match params with
     | [] -> PFailure("Error SELECT: no columns or values.")
-    | h::ha::hb::[] when h="*"&&(String.lowercase ha)="from" ->
+    | h::ha::hb::[] when h = "*" && (String.lowercase ha) = "from" ->
         Operation.select db hb None None
-    | h::ha::hb::hc::t when h="*"&&(String.lowercase ha)="from"&&(String.lowercase hc)="where" ->
+    | h::ha::hb::hc::t when h = "*" && (String.lowercase ha) = "from" && (String.lowercase hc) = "where" ->
         let where = parse_where t in
         (match where with
           | None -> PFailure("Error SELECT: invalid WHERE conditions.")
           | Some(c,o,v) -> Operation.select db hb None (Some(c,o,v)))
-    | h::ha::t when h="*"&&(String.lowercase ha)="from" ->
+    | h::ha::t when h = "*" && (String.lowercase ha) = "from" ->
         PFailure("Error SELECT: invalid tablename parameters.")
     | xs -> parse_lists xs
 
@@ -319,46 +316,51 @@ let print db name = match name with
  * All keywords are case insensitive.
  *)
 
+let to_normal (d, b) =
+  d >>= fun r -> return (r, b)
+
 let evaluate_db db input =
   let word_lst = Str.split (Str.regexp "[ \t,()]+") input in
   match word_lst with
-    | h::t when (String.lowercase h)="exit" -> exit t
-    | h::t when (String.lowercase h)="help" -> (help t, true)
-    | h::t when (String.lowercase h)="load" -> (load t, true)
-    | h::ha::t when (String.lowercase h)="create"&&(String.lowercase ha)="database" ->
-        (create_database t, true)
-    | h::ha::t when (String.lowercase h)="create"&&(String.lowercase ha)="table" ->
-        (create_table db t, true)
-    | h::ha::t when (String.lowercase h)="drop"&&(String.lowercase ha)="table" ->
-        (drop_table db t, true)
-    | h::ha::t when (String.lowercase h)="insert"&&(String.lowercase ha)="into" ->
-        (insert_into db t, true)
-    | h::t when (String.lowercase h)="delete" -> (delete_from db t, true)
-    | h::t when (String.lowercase h)="update" -> (update db t, true)
-    | h::t when (String.lowercase h)="select" -> (select db t, true)
-    | h::t when (String.lowercase h)="print" -> (print db t, true)
-    | _ -> (PFailure("Error: command not recognized."), true)
+    | h::t when (String.lowercase h) = "exit" -> return (exit t)
+    | h::t when (String.lowercase h) = "help" -> return (help t, true)
+    | h::t when (String.lowercase h) = "load" -> return (load t, true)
+    | h::ha::t when (String.lowercase h) = "create" && (String.lowercase ha) = "database" ->
+        to_normal (create_database t, true)
+    | h::ha::t when (String.lowercase h) = "create" && (String.lowercase ha) = "table" ->
+        return (create_table db t, true)
+    | h::ha::t when (String.lowercase h) = "drop" && (String.lowercase ha) = "table" ->
+        return (drop_table db t, true)
+    | h::ha::t when (String.lowercase h) = "insert" && (String.lowercase ha) = "into" ->
+        return (insert_into db t, true)
+    | h::t when (String.lowercase h) = "delete" -> return (delete_from db t, true)
+    | h::t when (String.lowercase h) = "update" -> return (update db t, true)
+    | h::t when (String.lowercase h) = "select" -> return (select db t, true)
+    | h::t when (String.lowercase h) = "print" -> return (print db t, true)
+    | _ -> return (PFailure("Error: command not recognized."), true)
 
 let evaluate input =
   let db_fail = (PFailure("Error: must load or create a database first."), true) in
   let word_lst = Str.split (Str.regexp "[ \t,()]+") input in
   match word_lst with
-    | h::t when (String.lowercase h)="exit" -> exit t
-    | h::t when (String.lowercase h)="help" -> (help t, true)
-    | h::t when (String.lowercase h)="load" -> (load t, true)
-    | h::ha::t when (String.lowercase h)="create"&&(String.lowercase ha)="database" ->
-        (create_database t, true)
-    | h::ha::t when (String.lowercase h)="create"&&(String.lowercase ha)="table" ->
-        db_fail
-    | h::ha::t when (String.lowercase h)="drop"&&(String.lowercase ha)="table" ->
-        db_fail
-    | h::ha::t when (String.lowercase h)="insert"&&(String.lowercase ha)="into" ->
-        db_fail
-    | h::t when (String.lowercase h)="delete" -> db_fail
-    | h::t when (String.lowercase h)="update" -> db_fail
-    | h::t when (String.lowercase h)="select" -> db_fail
-    | h::t when (String.lowercase h)="print" -> db_fail
-    | _ -> (PFailure("Error: command not recognized."), true)
+    | h::t when (String.lowercase h) = "exit" -> return (exit t)
+    | h::t when (String.lowercase h) = "help" -> return (help t, true)
+    | h::t when (String.lowercase h) = "load" -> return (load t, true)
+    | h::ha::t when (String.lowercase h) = "create" && (String.lowercase ha) = "database" ->
+        to_normal (create_database t, true)
+    | h::ha::t when (String.lowercase h) = "create" && (String.lowercase ha) = "table" ->
+        return db_fail
+    | h::ha::t when (String.lowercase h) = "drop" && (String.lowercase ha) = "table" ->
+        return db_fail
+    | h::ha::t when (String.lowercase h) = "insert" && (String.lowercase ha) = "into" ->
+        return db_fail
+    | h::t -> let b = (String.lowercase h) = "delete" ||
+                      (String.lowercase h) = "update" ||
+                      (String.lowercase h) = "select" ||
+                      (String.lowercase h) = "print" in
+              if b then return db_fail
+              else return (PFailure("Error: command not recognized."), true)
+    | _ -> return (PFailure("Error: command not recognized."), true)
 
 (** Functions to print results from evaluation. *)
 
@@ -408,7 +410,7 @@ let rec repl_db db =
   Reader.read_line stdin >>= fun i ->
   match i with
   | `Eof -> repl_db db                                      (* ????????????????????? *)
-  | `Ok input -> let evaluated = evaluate_db db input in
+  | `Ok input -> evaluate_db db input >>= fun evaluated ->
                  let first = fst evaluated in
                  print_result first;
                  let continue = snd evaluated in
@@ -416,14 +418,14 @@ let rec repl_db db =
                                 | Success x -> x
                                 | _ -> db in
                  if continue then repl_db database
-                 else return ()
+                 else let () = ignore(Async.Std.exit 0) in return ()
 
 let rec repl () =
   printf "\n> ";
   Reader.read_line stdin >>= fun i ->
   match i with
   | `Eof -> repl ()                                       (* ?????????????????????????????? *)
-  | `Ok input -> let evaluated = evaluate input in
+  | `Ok input -> evaluate input >>= fun evaluated ->
                  let first = fst evaluated in
                  print_result first;
                  let continue = snd evaluated in
@@ -431,10 +433,10 @@ let rec repl () =
                                 | Success x -> Some x
                                 | _ -> None in
                  if continue then
-                 match database with
+                 (match database with
                  | Some x -> repl_db x
-                 | None -> repl ()
-                 else return ()
+                 | None -> repl ())
+                 else let () = ignore(Async.Std.exit 0) in return ()
 
 let _ = printf "\n%s" "Starting DBMS. Type HELP to see a list of commands."
 let _ = repl ()
