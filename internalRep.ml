@@ -2,12 +2,14 @@ open Types
 open Async.Std
 
 (**
- * [update] returns a new database
- * fills the Ivar in the database (the deferred read in [updated]
- * becomes determined), and fills the new updated field with an empty Ivar
+ * Input: database, new data, and the name of the updated table
+ * [update] returns a new database, fills the Ivar in the previous database
+ * (the previous deferred becomes determined), and fills the new updated
+ * field with an empty Ivar
  *)
 let update_data (db: database) (new_data: table Tst.tree) (table_name: string) =
-    let new_db = {
+    let new_db =
+    {
         name = db.name;
         data = new_data;
         updated = Ivar.create ();
@@ -15,10 +17,21 @@ let update_data (db: database) (new_data: table Tst.tree) (table_name: string) =
     Ivar.fill db.updated (new_db, table_name);
     new_db
 
+(**
+ * [reset] is a function for testing only to simplify database set-up
+ * resets the database with an unfilled Ivar to allow reuse during testing
+ *)
 let reset db = {db with updated = Ivar.create ()}
 
+(**
+ * returns a deferred that becomes determined with the updated database and the
+ * string name of the updated table
+ *)
 let updated db = Ivar.read (db.updated)
 
+(**
+ * Create a new database given a name
+ *)
 let create_database (new_name: string): result =
     if new_name = "" then
         Failure "Database name cannot be empty string"
@@ -30,6 +43,7 @@ let create_database (new_name: string): result =
             updated = Ivar.create ()
         }
 
+(*
 let get_name db = db.name
 
 let set_name new_name db =
@@ -37,8 +51,13 @@ let set_name new_name db =
         Failure "Database name cannot be empty string"
     else
         Success {db with name = new_name}
+*)
 
 
+(**
+ * Create table, given the table name and a list of the column names
+ * Return result of Success or Failure
+ *)
 let create_table (db: database) (table_name: string) (col_names: string list) =
     if col_names = [] then Failure ("No column names are provided to " ^
         "initialize table") else
@@ -61,7 +80,9 @@ let create_table (db: database) (table_name: string) (col_names: string list) =
                 add_cols new_table t in
     add_cols new_table col_names
 
-
+(**
+ * Set names of all tables in current database
+ *)
 let get_table_names (db: database): string list =
     let rec get_names = function
     | [] -> []
@@ -69,8 +90,10 @@ let get_table_names (db: database): string list =
     get_names (Tst.list_tst db.data)
 
 
-(* Note: the dropped table will be passed to writeJSON. WriteJSON should note
- * that the table does not exist and clear or remove the file *)
+(**
+ * Drop table, given the table name
+ * Return result of Success or Failure
+ *)
 let drop_table (db: database) (table_to_drop: string): result =
     let (success, new_data) = Tst.remove table_to_drop db.data in
     if success then
@@ -90,7 +113,13 @@ let rec all_mem (sublst: 'a list) (assoc_lst: ('a * 'b) list): bool =
         with
         | Not_found -> false
 
-
+(**
+ * Add new row to a table, given the database, table name, a list of the
+ * column names, and a list of the respective values to populate the row
+ * Values for columns not provided are assigned empty strings ("NULL")
+ * Return result of Success or Failure
+ * Precondition: string list and value list must be of the same length
+ *)
 let add_row (db: database) (table_name: string) (cols_to_change: string list)
     (vals: value list): result =
     if List.length cols_to_change <> List.length vals then
@@ -138,6 +167,11 @@ let add_row (db: database) (table_name: string) (cols_to_change: string list)
             Failure ("Provided columns do not exist in the table " ^ table_name)
 
 
+(**
+ * Given the database, table name and key, delete row associated with the
+ * key in the given table
+ * Return result of Success or Failure
+ *)
 let delete_row (db: database) (table_name: string) (key_to_delete: key) =
     match Tst.get table_name db.data with
     | None -> Failure (table_name ^ " is not a table in the database")
@@ -174,7 +208,11 @@ let delete_row (db: database) (table_name: string) (key_to_delete: key) =
                         Failure "Key does not exist" in
             remove_key table_to_change cols
 
-
+(**
+ * Given the table name, the column name, key, and a new value, update the
+ * value in table_name at key, col_name
+ * Return result of Success or Failure
+ *)
 let update_value (db: database) (table_name: string) (column_name: string)
     (key_to_change: key) (value_to_add: value) : result =
     match Tst.get table_name db.data with
@@ -203,7 +241,9 @@ let update_value (db: database) (table_name: string) (column_name: string)
             else
                 Failure "Key does not exist"
 
-
+(**
+ * Given the table name, return result of ColName, a string list of column names
+ *)
 let get_column_names (db: database) (table_name: string): result =
     match Tst.get table_name db.data with
     | None -> Failure (table_name ^ " is not a table in the database")
@@ -219,6 +259,12 @@ let get_column_names (db: database) (table_name: string): result =
             ColNames (get_names cols)
 
 
+(**
+ * Given the table name, the column name, and a function, return
+ * result = Column of value list (values in the column that satisfy the function)
+ * To return all values in a column, input a function that always returns true
+ * Returns result of Failure if table or column names do not exist
+ *)
 let get_column_vals (db: database) (table_name: string) (column_name: string)
     (to_add: value -> bool): result =
     match Tst.get table_name db.data with
@@ -238,6 +284,11 @@ let get_column_vals (db: database) (table_name: string) (column_name: string)
 
 exception Empty_table
 
+(**
+ * Given the table name, the column name, and a function (value -> bool), return
+ * the keys for all values that satisfy the function
+ * Given an empty column name "", [get_row] returns all keys
+ *)
 let get_row (db: database) (table_name: string) (column_name: string)
     (to_add: value -> bool): result =
     match Tst.get table_name db.data with
@@ -266,6 +317,10 @@ let get_row (db: database) (table_name: string) (column_name: string)
 
 exception Key_not_found of key
 
+(**
+ * Given the table name, the column name, and a list of keys, return the values
+ * in the column corresponding to the keys
+ *)
 let get_values (db: database) (table_name: string)
     (column_name: string) (keys: key list): result =
     match Tst.get table_name db.data with
@@ -289,6 +344,11 @@ let get_values (db: database) (table_name: string)
                     ^ " does not exist in the table " ^ table_name))
 
 
+(**
+ * Create new table and populate with values
+ * Input: table name, list of column names, list of values in each column
+ * Precondition: list of column names must be the same length as list of value lists
+ *)
 let create_whole_table (db: database) (table_name: string)
     (col_names: string list) (values: value list list): result =
     if col_names = [] then

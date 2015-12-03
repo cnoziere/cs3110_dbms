@@ -30,12 +30,18 @@ let rec is_valid = function
             | Node(right_k,_,_,_) -> right_k > k in
         check_left && check_right && is_valid left && is_valid right
 
-
+(**
+ * Create an empty new tree
+ *)
 let create (): 'a tree = Leaf
 
 
-(* true if key already exists, key is updated
- * false if key does not exist, key is inserted *)
+(**
+ * Insert 'a item with an int key and return the updated tree
+ * If a value already exists for the int key, replace the stored value
+ * returns true if key already exists, key is updated
+ * false if key does not exist, key is inserted
+ *)
 let rec insert (key: int) (item: 'a) (t: 'a tree): (bool * 'a tree) =
     match t with
     | Leaf -> (false, Node (key, Some item, Leaf, Leaf))
@@ -49,8 +55,12 @@ let rec insert (key: int) (item: 'a) (t: 'a tree): (bool * 'a tree) =
             (flag, Node (k, v, left, r))
 
 
-(* true if key is removed, tree is updated
- * false if key does not exist, tree is unchanged *)
+(**
+ * Remove 'a item with a int key and return the updated tree
+ * If int key does not exist, return the original tree
+ * return true if key is removed, tree is updated
+ * false if key does not exist, tree is unchanged
+ *)
 let rec remove (key: int) (t: 'a tree): (bool * 'a tree) =
     match t with
     | Leaf -> (false, Leaf)
@@ -72,7 +82,10 @@ let rec remove (key: int) (t: 'a tree): (bool * 'a tree) =
             let (flag, r) = remove key right in
             (flag, Node (k, v, left, r))
 
-
+(**
+ * Search for a int key in the tree and return Some of 'a item
+ * If int key does not exist, return None
+ *)
 let rec get (key: int) (t: 'a tree): 'a option =
     match t with
     | Leaf -> None
@@ -84,11 +97,16 @@ let rec get (key: int) (t: 'a tree): 'a option =
             get key right
 
 
+(**
+ * Return list of keys and values
+ *)
 let rec list_bst = function
     | Node (k, Some v, left, right) -> list_bst left @ [(k, v)] @ list_bst right
     | _ -> []
 
-
+(**
+ * Print a string tree to terminal
+ *)
 let print_string_bst (t: string tree): unit =
     let string_option = function
         | None -> "None"

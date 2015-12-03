@@ -17,10 +17,17 @@ let is_char (t: 'a tree) (key: string): bool =
     | Leaf -> false
     | Node (c,_,_,_,_) -> key.[0] = c
 
+
+(**
+ * Create an empty new tree
+ *)
 let create (): 'a tree = Leaf
 
 
-(* true if key already exists, key is updated
+(**
+ * Insert 'a item with a string key and return the updated tree
+ * If a value already exists for the string key, replace the stored value
+ * returns true if key already exists, key is updated
  * false if key does not exist, key is inserted
  *)
 let rec insert (key: string) (item: 'a) (t: 'a tree): (bool * 'a tree) =
@@ -49,8 +56,13 @@ let rec insert (key: string) (item: 'a) (t: 'a tree): (bool * 'a tree) =
             let (flag, new_t) = insert key item t3 in
             (flag, Node (c, v, t1, t2, new_t))
 
-(* true if key is removed, tree is updated
- * false if key does not exist, tree is unchanged *)
+
+(**
+ * Remove 'a item with a string key and return the updated tree
+ * If string key does not exist, return the original tree
+ * return true if key is removed, tree is updated
+ * false if key does not exist, tree is unchanged
+ *)
 let rec remove (key: string) (t: 'a tree): (bool * 'a tree) =
     let key = if key = "" then " " else key in
     match t with
@@ -77,7 +89,10 @@ let rec remove (key: string) (t: 'a tree): (bool * 'a tree) =
             let (flag, new_t) = remove key t3 in
             (flag, Node (c, v, t1, t2, new_t))
 
-
+(**
+ * Search for a string key in the tree and return Some of 'a item
+ * If string key does not exist, return None
+ *)
 let rec get (key: string) (t: 'a tree): 'a option =
     let key = if key = "" then " " else key in
     match t with
@@ -90,11 +105,12 @@ let rec get (key: string) (t: 'a tree): 'a option =
         else if (key.[0] < c) then get key t1
         else get key t3 (* key.[0] > c *)
 
-
+(* Return string representing an int option *)
 let string_int_option = function
     | None -> "None"
     | Some v -> string_of_int v
 
+(* Return string representing an int TST *)
 let rec string_int_tst = function
     | Leaf -> "Leaf"
     | Node (c, v, t1, t2, t3) ->
@@ -102,8 +118,12 @@ let rec string_int_tst = function
         ^ (string_int_tst t1) ^ "," ^ (string_int_tst t2) ^ ","
         ^ (string_int_tst t3) ^ ")"
 
+(**
+ * Print an int tree to terminal
+ *)
 let print_int_tst (t: int tree): unit = print_endline (string_int_tst t)
 
+(* Return string representing an alpha TST *)
 let rec string_a_tst = function
     | Leaf -> "Leaf"
     | Node (c, None, t1, t2, t3) ->
@@ -115,9 +135,14 @@ let rec string_a_tst = function
         ^ (string_a_tst t1) ^ "," ^ (string_a_tst t2) ^ ","
         ^ (string_a_tst t3) ^ ")"
 
+(**
+ * Print keys of an 'a tree to terminal
+ *)
 let print_a_tst (t: 'a tree): unit = print_endline (string_a_tst t)
 
-
+(**
+ * Return alphabetical list of keys and value options
+ *)
 let rec keys_tst = function
     | Leaf -> []
     | Node (c, curr_v, t1, t2, t3) ->
@@ -128,10 +153,16 @@ let rec keys_tst = function
         let split = if curr_v <> None then [(Char.escaped c, curr_v)] else [] in
         keys_tst t1 @ split @ (prepend (keys_tst t2)) @ keys_tst t3
 
+(**
+ * Print alphabetical list of keys and values
+ *)
 let rec print_keys = function
     | [] -> ()
     | (k, v')::t -> Printf.printf "%s, %s\n" k (string_int_option v'); print_keys t
 
+(**
+ * Return alphabetical list of keys and values
+ *)
 let list_tst t =
     let rec strip_option = function
     | (k, Some x)::xs -> (k, x)::(strip_option xs)
