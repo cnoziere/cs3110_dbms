@@ -78,9 +78,10 @@ PRINT tablename
 
 Example session
 
-Try running the following, while occasionally calling PRINT tablename to see
-the effects. Also note that the .json files update with every change. The files
-are in the directory which shares the database name.
+Try running the following commands line-by-line, while occasionally 
+calling PRINT tablename to see the effects. Also note that the .json 
+files update with every change. The files are in the directory which 
+shares the database name.
 
 
 CREATE DATABASE Characters
@@ -115,5 +116,5 @@ PRINT t2
 PRINT t3
 
 
-Note that the last line switches the database to the database saved in
+Note that [LOAD minimalDB] switches the database to the database saved in
 minimalDB.json.
