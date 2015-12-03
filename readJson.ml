@@ -116,6 +116,7 @@ let drop_db (db : database) =
     let p2 = "./" ^ dbname ^ "/" ^ dbname ^ ".json" in
     match (Sys.file_exists p1, Sys.file_exists p2) with
     | (true, true) -> let tablenames = get_table_names db in
-                      List.iter (delete_table p1) tablenames
-    | (true, false) -> Unix.rmdir dbname
-    | _ -> ()
+                      List.iter (delete_table p1) tablenames;
+                      Success db
+    | (true, false) -> Unix.rmdir dbname; Success db
+    | _ -> Failure ("Database " ^ db.name ^ "does not exist.\n")

@@ -29,4 +29,4 @@ val create_full_table: database -> string -> json -> result
 
 (* [drop_db d] deletes all files pertaining to database
  * db from disk *)
-val drop_db : database -> unit
+val drop_db : database -> result
