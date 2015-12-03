@@ -1,16 +1,17 @@
 (* This module handles the creation of databases and tables from json files *)
 open Types
-open Yojson.Basic
+open InternalRep
+open Yojson.Basic.Util
 
-let ok_to_create_database (dbname : string) =
+let ok_to_create_db (dbname : string) =
   let open Async.Std in
     let path = "./" ^ dbname ^ "/" ^ dbname ^ ".json" in
     (Sys.file_exists_exn path) >>= (fun b ->
       if b then return false
       else (Unix.mkdir (~perm:0o777) dbname >>= fun () ->
       Writer.open_file path >>=
-      fun t -> Writer.write t (pretty_to_string `Null); Writer.close t >>=
-      fun () -> return true))
+      fun t -> Writer.write t (Yojson.Basic.pretty_to_string `Null);
+      Writer.close t >>= fun () -> return true))
 
 let to_string_list json =
     let open Yojson.Basic.Util in
@@ -19,25 +20,21 @@ let to_string_list json =
     |> List.map to_string
 
 let create_full_table (db: database) (tablename : string) json =
-    let open Yojson.Basic.Util in
     match
       (try
         let table_name =                    (* table_name : string *)
           json
           |> member "tableName"
           |> to_string in
-
         let column_names =                  (* column_names : string list *)
           json
           |> member "columnNames"
           |> to_string_list in
-
         let columns =                       (* columns : string list list *)
           json
           |> member "columns"
           |> to_list
           |> List.map to_string_list in
-
         Some (table_name, column_names, columns)
       with
       | _ -> None)
@@ -46,8 +43,8 @@ let create_full_table (db: database) (tablename : string) json =
     | Some (table_name, column_names, columns) ->
       if List.length columns <> List.length column_names
       then Failure ("Incorrectly formated json file for table " ^ tablename ^
-      ". columnNames and column should be of the same length.\n")
-      else InternalRep.create_whole_table db table_name column_names columns
+      ". columnNames and columns should be of the same length.\n")
+      else create_whole_table db table_name column_names columns
 
 let load_table (db : database) (tablename : string) =
     let dbname = db.name in
@@ -77,7 +74,6 @@ let no_failure f = function
     | _ -> failwith "This should never pattern match"
 
 let create_db (dbname: string) json =
-    let open Yojson.Basic.Util in
     match
       (try
         let dbname =
@@ -93,10 +89,10 @@ let create_db (dbname: string) json =
       | _ -> None)
     with
     | None -> Failure ("Cannot parse file ./" ^ dbname ^ "/" ^ dbname ^ ".json\n")
-    | Some (dbname, tables) -> let x1 = InternalRep.create_database dbname in
+    | Some (dbname, tables) -> let x1 = create_database dbname in
                                let x2 = no_failure (load_tables tables) x1 in
-                               let f = (fun x -> UpdateJson.watch_for_update x; Success x) in
-                               no_failure f x2
+                               let f = (fun x -> UpdateJson.watch_for_update x;
+                               Success x) in no_failure f x2
 
 let load_db (dbname : string) =
     let path = "./" ^ dbname ^ "/" ^ dbname ^ ".json" in
@@ -141,4 +137,3 @@ let drop_db (db : database) =
     | _ -> Success db *)
 
 (* add functionality to remove a database *)
-(* check all failwith no *)

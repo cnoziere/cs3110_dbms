@@ -3,25 +3,26 @@ open Types
 open Yojson.Basic
 open Async.Std
 
-(* [load_db dbname] creates the database specified by path
- * './dbname/dbname.json'
+(* [load_db dbname] loads the json file from path
+ * './dbname/dbname.json' and creates a database from the file
+ * contents
  * Returns Success if the operation was successfully completed
  * Otherwise returns Failure some_error_message *)
 val load_db: string -> result
 
-(* [create_database dbname json] creates the database with name
- * dbname and contents as specified by json
+(* [create_database dbname j] creates the database with name
+ * dbname and contents as specified by the JSON value j
  * Returns Success if the operation was successfully completed
  * Otherwise returns Failure some_error_message *)
 val create_db: string -> json -> result
 
-(* [create_full_table db tablename json] creates the table with
- * name tablename and contents as specified by json. The table
- * is added to database db.
+(* [ok_to_create_database d] returns true if no database with
+ * name d currently exists on disk and false otherwise *)
+val ok_to_create_db: string -> bool Deferred.t
+
+(* [create_full_table db tablename j] creates the table with
+ * name tablename and contents as specified by the JSON value j.
+ * The table is added to database db.
  * Returns Success if the operation was successfully completed
  * Otherwise returns Failure some_error_message *)
 val create_full_table: database -> string -> json -> result
-
-(* [ok_to_create_database d] returns true if no database with
- * name d currently exists and false otherwise *)
-val ok_to_create_database: string -> bool Deferred.t

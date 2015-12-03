@@ -92,7 +92,7 @@ let load params = match params with
 let create_database params = match params with
   | [] -> return (PFailure "Error CREATE DATABASE: no name.")
   | h::[] ->
-      ReadJson.ok_to_create_database h >>= fun b ->
+      ReadJson.ok_to_create_db h >>= fun b ->
       if b then
         let res = Operation.create_database h in
         (match res with
