@@ -1,4 +1,5 @@
 open Types
+open Async.Std
 
 (**
  * Helper functions for parsing user input and starting evaluation.
@@ -6,6 +7,8 @@ open Types
  * Invalid syntax causes a parse failure instead.
  * See README file and test_parser for examples of valid input.
  *)
+
+let stdin : Reader.t = Lazy.force Reader.stdin
 
 let help_message =
 "\n
@@ -91,12 +94,12 @@ let create_database params = match params with
   | h::[] -> begin
       if ReadJson.ok_to_create_database h then begin
         let res = Operation.create_database h in
-        let () = match res with
+        (match res with
           | Success db -> UpdateJson.watch_for_update db
-          | _ -> () in
+          | _ -> ());
         res
       end
-      else Failure("Database "^h^" already exists.")
+      else Failure("Database " ^ h ^ " already exists.")
     end
   | _ -> PFailure("Error CREATE DATABASE: too many parameters.")
 
@@ -376,54 +379,63 @@ let cols_to_rows col_list =
 
 let print_row row =
   let rec print_rec lst = match lst with
-    | [] -> Printf.printf "\n%s" ""
-    | h::[] -> Printf.printf ", %s\n" h
-    | h::t -> Printf.printf ", %s" h; print_rec t in
+    | [] -> printf "%s" "\n"
+    | h::[] -> printf ", %s\n" h
+    | h::t -> printf ", %s" h; print_rec t in
   match row with
-    | [] -> Printf.printf "%s" "No values"
-    | h::t -> Printf.printf "%s" h; print_rec t
+    | [] -> printf "%s" "No values"
+    | h::t -> printf "%s" h; print_rec t
 
 let print_cols col_lst =
   let rows = cols_to_rows col_lst in
-  Printf.printf "\n%s" "";
+  printf "%s" "\n";
   List.iter print_row rows
 
 let print_result res = match res with
-  | Success _ -> Printf.printf "%s\n" "Success"
-  | Failure x -> Printf.printf "%s\n" x
-  | PMessage x -> Printf.printf "%s\n" x
-  | PFailure x -> Printf.printf "%s\n" x
+  | Success _ -> printf "%s\n" "Success"
+  | Failure x -> printf "%s\n" x
+  | PMessage x -> printf "%s\n" x
+  | PFailure x -> printf "%s\n" x
   | OpColumn x -> print_cols x
-  | _ -> Printf.printf "%s\n" "Could not print--will not reach this case."
+  | _ -> printf "%s\n" "Could not print--will not reach this case."
 
 (**
  * Functions to start REPL. Handles the Read and Loop parts.
  * Calls helper functions to Evaluate and Print.
  *)
-
 let rec repl_db db =
-  let () = Printf.printf "\n> " in
-  let input = read_line () in
-  let evaluated = evaluate_db db input in
-  let () = print_result (fst evaluated) in
-  let continue = snd evaluated in
-  let database = match (fst evaluated) with | Success x -> x | _ -> db in
-  if continue then repl_db database else ()
+  printf "\n> ";
+  Reader.read_line stdin >>= fun i ->
+  match i with
+  | `Eof -> repl_db db                                      (* ????????????????????? *)
+  | `Ok input -> let evaluated = evaluate_db db input in
+                 let first = fst evaluated in
+                 print_result first;
+                 let continue = snd evaluated in
+                 let database = match first with
+                                | Success x -> x
+                                | _ -> db in
+                 if continue then repl_db database
+                 else return ()
 
 let rec repl () =
-  let () = Printf.printf "\n> " in
-  let input = read_line () in
-  let evaluated = evaluate input in
-  let () = print_result (fst evaluated) in
-  let continue = snd evaluated in
-  let database = match (fst evaluated) with | Success x -> Some x | _ -> None in
-  if continue then
-    match database with
-      | Some x -> repl_db x
-      | None -> repl()
-  else ()
+  printf "\n> ";
+  Reader.read_line stdin >>= fun i ->
+  match i with
+  | `Eof -> repl ()                                       (* ?????????????????????????????? *)
+  | `Ok input -> let evaluated = evaluate input in
+                 let first = fst evaluated in
+                 print_result first;
+                 let continue = snd evaluated in
+                 let database = match first with
+                                | Success x -> Some x
+                                | _ -> None in
+                 if continue then
+                 match database with
+                 | Some x -> repl_db x
+                 | None -> repl ()
+                 else return ()
 
-let start_repl () =
-  let () = Printf.printf "\n%s"
-           "Starting DBMS. Type HELP to see a list of commands." in
-  repl()
+let _ = printf "\n%s" "Starting DBMS. Type HELP to see a list of commands."
+let _ = repl ()
+let _ = Scheduler.go ()

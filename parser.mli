@@ -1,10 +1,11 @@
 open Types
+open Async.Std
 
 (**
  * Starts REPL to infinitely loop to read user input, and calls other
  * Parser functions to evaluate and print.
  *)
-val start_repl : unit -> unit
+(* val start_repl : unit -> unit Deferred.t *)
 
 (**
  * Matches user input to find appropriate command to call from ReadJSON or

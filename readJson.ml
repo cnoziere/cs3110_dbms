@@ -68,12 +68,17 @@ let load_table (db : database) (tablename : string) =
     | None -> Failure ("Cannot parse table " ^ tablename ^ " in directory "
         ^ dbname ^ ".\n")
 
-let rec load_tables db tables =
+let rec load_tables tables db =
     match tables with
     | [] -> Success db
     | hd :: tl -> match load_table db hd with
-                  | Success db' -> load_tables db' tl
+                  | Success db' -> load_tables tl db'
                   | s -> s
+
+let no_failure f = function
+    | Failure s -> Failure s
+    | Success db -> f db
+    | _ -> failwith "This should never pattern match"
 
 let create_database (dbname: string) json =
     let open Yojson.Basic.Util in
@@ -92,11 +97,10 @@ let create_database (dbname: string) json =
       | _ -> None)
     with
     | None -> Failure ("Cannot parse file ./" ^ dbname ^ "/" ^ dbname ^ ".json\n")
-    | Some (dbname, tables) -> (match InternalRep.create_database dbname with
-                                | Success db -> UpdateJson.watch_for_update db;
-                                                load_tables db tables
-                                | Failure s -> Failure s
-                                | _ -> failwith "This should never pattern match")
+    | Some (dbname, tables) -> let x1 = InternalRep.create_database dbname in
+                               let x2 = no_failure (load_tables tables) x1 in
+                               let f = (fun x -> UpdateJson.watch_for_update x; Success x) in
+                               no_failure f x2
 
 let load_db (dbname : string) =
     let path = "./" ^ dbname ^ "/" ^ dbname ^ ".json" in

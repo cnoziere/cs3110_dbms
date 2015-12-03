@@ -54,14 +54,16 @@ let database_to_json (db : database) =
 (* attention: Writer.write overwrites the contents of the previous file *)
 let database_to_file (db : database) =
   let json = database_to_json db in
-  let dbname = db.name in
+  (* let dbname = db.name in *)
   let d1 = let open Async.Std in
            Writer.open_file "tmp.json" >>=
           (fun t -> Writer.write t (pretty_to_string json); Writer.close t) in
-  Async.Std.upon d1 (fun () ->
+
+  ignore d1
+  (* Async.Std.upon d1 (fun () ->
     let path  = "./" ^ dbname ^ "/" ^ dbname ^ ".json" in
     if Sys.file_exists path then Sys.remove path else ();
-    Sys.rename "tmp.json" path)
+    Sys.rename "tmp.json" path) *)
 
 (* checks to see if the database has been updated and if so
 writes the database to file *)
@@ -73,13 +75,15 @@ let rec watch_for_update (db : database) =
   | (true, true) -> ignore (table_to_file db' tablename)
   | (true, false) -> Sys.remove ("./" ^ db.name ^ "/" ^ tablename ^ ".json");
                      ignore (database_to_file db')
+  | (false, true) -> let _ = table_to_file db' tablename in
+                     let _ = database_to_file db' in ()
+  | (false, false) -> ())
+
+  (* match (List.mem tablename (InternalRep.get_table_names db),
+  List.mem tablename (InternalRep.get_table_names db')) with
+  | (true, true) -> ignore (table_to_file db' tablename)
+  | (true, false) -> Sys.remove ("./" ^ db.name ^ "/" ^ tablename ^ ".json");
+                     ignore (database_to_file db')
   | (false, true) -> ignore (table_to_file db' tablename);
                      ignore (database_to_file db')
-  | (false, false) -> failwith "This will never pattern match")
-
-(*
-* drop table needed
-* Call table_to_file everytime a pre-existing table is modified.
-* Call databse_to_file everytime a new table is created. *)
-
-(* ACTUALLY START WATCH_FOR_UPDATE *)
+  | (false, false) -> failwith "This will never pattern match") *)
