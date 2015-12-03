@@ -26,3 +26,7 @@ val ok_to_create_db: string -> bool Deferred.t
  * Returns Success if the operation was successfully completed
  * Otherwise returns Failure some_error_message *)
 val create_full_table: database -> string -> json -> result
+
+(* [drop_db d] deletes all files pertaining to database
+ * db from disk *)
+val drop_db : database -> result

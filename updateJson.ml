@@ -64,3 +64,5 @@ let rec watch_for_update (db : database) =
     | (false, true)  -> ignore (table_to_file db' tablename >>=
                         fun _ -> database_to_file db')        (* table added *)
     | (false, false) -> ignore (database_to_file db'))
+
+(* if file deleted then shouldn't be a problem *)
