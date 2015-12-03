@@ -53,14 +53,16 @@ let database_to_file (db : database) =
  * Whenever the database is updated, the deferred becomes determined
  * and the appropriate portion of the database is written to file *)
 let rec watch_for_update (db : database) =
-  Async.Std.upon (updated db)
-  (fun (db', tablename) -> watch_for_update db';
+  let open Async.Std in
+  updated db >>=
+  (fun (db', tablename) ->
     let check = fun x -> List.mem tablename (get_table_names x) in
     let path = "./" ^ db.name ^ "/" ^ tablename ^ ".json" in
-    match (check db, check db') with
-    | (true, true)   -> ignore (table_to_file db' tablename)  (* table modified *)
-    | (true, false)  -> ignore (Sys.remove path >>=
-                        fun () -> database_to_file db')       (* table deleted *)
-    | (false, true)  -> ignore (table_to_file db' tablename >>=
-                        fun _ -> database_to_file db')        (* table added *)
-    | (false, false) -> ignore (database_to_file db'))
+    let d1 = match (check db, check db') with
+    | (true, true)   -> table_to_file db' tablename          (* table modified *)
+    | (true, false)  -> Sys.remove path >>=
+                        fun () -> database_to_file db'       (* table deleted *)
+    | (false, true)  -> table_to_file db' tablename >>=
+                        fun _ -> database_to_file db'        (* table added *)
+    | (false, false) -> database_to_file db' in
+    d1 >>= fun () -> watch_for_update db')

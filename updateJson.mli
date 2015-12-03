@@ -25,4 +25,4 @@ val database_to_file: database -> unit Deferred.t
  * [watch_for_update db] performs one of the following:
  * 1) if a table from db has been modified, it writes the new table to file
  * 2) if a table has been added/removed, it writes the updated database to file *)
-val watch_for_update: database -> unit
+val watch_for_update: database -> unit Deferred.t

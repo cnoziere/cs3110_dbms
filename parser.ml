@@ -96,7 +96,7 @@ let create_database params = match params with
       if b then
         let res = Operation.create_database h in
         (match res with
-          | Success db -> UpdateJson.watch_for_update db
+          | Success db -> ignore(UpdateJson.watch_for_update db)
           | _ -> ());
         return res
       else return (Failure ("Database " ^ h ^ " already exists."))
