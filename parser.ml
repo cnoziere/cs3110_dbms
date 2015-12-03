@@ -420,7 +420,7 @@ let rec repl_db db =
                                 | Success x -> x
                                 | _ -> db in
                  if continue then repl_db database
-                 else return ()
+                 else let () = ignore(Async.Std.exit 0) in return ()
 
 let rec repl () =
   printf "\n> ";
@@ -435,10 +435,10 @@ let rec repl () =
                                 | Success x -> Some x
                                 | _ -> None in
                  if continue then
-                 match database with
+                 (match database with
                  | Some x -> repl_db x
-                 | None -> repl ()
-                 else return ()
+                 | None -> repl ())
+                 else let () = ignore(Async.Std.exit 0) in return ()
 
 let _ = printf "\n%s" "Starting DBMS. Type HELP to see a list of commands."
 let _ = repl ()
