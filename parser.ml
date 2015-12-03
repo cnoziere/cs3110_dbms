@@ -42,7 +42,7 @@ DELETE * FROM tablename
   - Another way to delete rows. This deletes all rows from the table with name
   tablename.
 
-UPDATE tablename SET (col1='val1', col2='val2', ...) WHERE []
+UPDATE tablename SET (col1=val1, col2=val2, ...) WHERE []
   - Updates rows in the table with name tablename. Updates column name col1 to
   value val1, col2 to val2, …
   - Identifies the rows to update by the WHERE condition. See below for help on
@@ -58,9 +58,9 @@ SELECT * FROM tablename
   - Another way to select rows. This selects, and prints to terminal, every
   column in the table.
 
-WHERE column_name OPERATOR ‘value’
+WHERE column_name OPERATOR value
   - WHERE filters rows for other operations. Rows that satisfy column_name
-  OPERATOR ‘value’ are selected.
+  OPERATOR value are selected.
   - OPERATOR must be one of the following:
     =
     <>
@@ -146,32 +146,31 @@ let insert_into db params =
 let parse_where lst =
   if lst=[] then None else
   let param_str = String.concat "" lst in
-  let no_quotes = Str.global_replace (Str.regexp "\\('\\)") "" param_str in
 
-  let eq  =   Str.regexp ("\\([A-Za-z0-9]+='[A-Za-z0-9]+'\\)" ^ "$") in
-  let noteq = Str.regexp ("\\([A-Za-z0-9]+<>'[A-Za-z0-9]+'\\)" ^ "$") in
-  let gt =    Str.regexp ("\\([A-Za-z0-9]+>'[A-Za-z0-9]+'\\)" ^ "$") in
-  let lt =    Str.regexp ("\\([A-Za-z0-9]+<'[A-Za-z0-9]+'\\)" ^ "$") in
-  let gteq =  Str.regexp ("\\([A-Za-z0-9]+>='[A-Za-z0-9]+'\\)" ^ "$") in
-  let lteq =  Str.regexp ("\\([A-Za-z0-9]+<='[A-Za-z0-9]+'\\)" ^ "$") in
+  let eq  =   Str.regexp ("\\([A-Za-z0-9]+=[A-Za-z0-9]+\\)" ^ "$") in
+  let noteq = Str.regexp ("\\([A-Za-z0-9]+<>[A-Za-z0-9]+\\)" ^ "$") in
+  let gt =    Str.regexp ("\\([A-Za-z0-9]+>[A-Za-z0-9]+\\)" ^ "$") in
+  let lt =    Str.regexp ("\\([A-Za-z0-9]+<[A-Za-z0-9]+\\)" ^ "$") in
+  let gteq =  Str.regexp ("\\([A-Za-z0-9]+>=[A-Za-z0-9]+\\)" ^ "$") in
+  let lteq =  Str.regexp ("\\([A-Za-z0-9]+<=[A-Za-z0-9]+\\)" ^ "$") in
 
   if Str.string_match eq param_str 0 then
-    let strs = Str.split (Str.regexp "\\(=\\)") no_quotes in
+    let strs = Str.split (Str.regexp "\\(=\\)") param_str in
     Some(List.nth strs 0, Eq, List.nth strs 1)
   else if Str.string_match noteq param_str 0 then
-    let strs = Str.split (Str.regexp "\\(<>\\)") no_quotes in
+    let strs = Str.split (Str.regexp "\\(<>\\)") param_str in
     Some(List.nth strs 0, NotEq, List.nth strs 1)
   else if Str.string_match gt param_str 0 then
-    let strs = Str.split (Str.regexp "\\(>\\)") no_quotes in
+    let strs = Str.split (Str.regexp "\\(>\\)") param_str in
     Some(List.nth strs 0, Gt, List.nth strs 1)
   else if Str.string_match lt param_str 0 then
-    let strs = Str.split (Str.regexp "\\(<\\)") no_quotes in
+    let strs = Str.split (Str.regexp "\\(<\\)") param_str in
     Some(List.nth strs 0, Lt, List.nth strs 1)
   else if Str.string_match gteq param_str 0 then
-    let strs = Str.split (Str.regexp "\\(>=\\)") no_quotes in
+    let strs = Str.split (Str.regexp "\\(>=\\)") param_str in
     Some(List.nth strs 0, GtEq, List.nth strs 1)
   else if Str.string_match lteq param_str 0 then
-    let strs = Str.split (Str.regexp "\\(<=\\)") no_quotes in
+    let strs = Str.split (Str.regexp "\\(<=\\)") param_str in
     Some(List.nth strs 0, LtEq, List.nth strs 1)
   else None
 
