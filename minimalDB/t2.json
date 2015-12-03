@@ -1,10 +1,12 @@
 {
   "tableName": "t2",
-  "columnNames": ["Col1", "Col2", "Col3", "Col4"],
+  "columnNames": ["Col1", "Col2", "Col3", "Col4", "Col5"],
   "columns":
   [
-    ["Merry Christmas", "Happy", "Birthday", "21", "88293u93ddsjhjs"],
-    ["0", "1", "None", "SD", "the cat sits on the dog"],
-    ["Blue", "Green", "Purple", "o r a n g e", ""]
+    ["Merry Christmas", "Happy", "Birthday"],
+    ["0", "None", "SD"],
+    ["Blue", "Green", "Purple"],
+    ["88293u93ddsjhjs", "o r a n g e", ""],
+    ["the cat sits on the dog", "21", "88293u93ddsjhjs"]
   ]
 }

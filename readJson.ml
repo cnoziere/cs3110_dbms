@@ -13,12 +13,12 @@ let rec one_by_one (db : database) f = function
 let ok_to_create_database (dbname : string) =
     let path = "./" ^ dbname ^ "/" ^ dbname ^ ".json" in
     let res = not (Sys.file_exists path) in
-    if res then Unix.mkdir dbname 0o666 else ();
+    if res then Unix.mkdir dbname 0o777 else ();
     res
 
-let to_column jsoncol =
+let to_string_list json =
     let open Yojson.Basic.Util in
-    jsoncol
+    json
     |> to_list
     |> List.map to_string
 
@@ -32,16 +32,15 @@ let create_full_table (db: database) (tablename : string) json =
           |> to_string in
 
         let column_names =                  (* column_names : string list *)
-          [json]
-          |> filter_member "columnNames"
-          |> flatten
-          |> List.map to_string in
+          json
+          |> member "columnNames"
+          |> to_string_list in
 
         let columns =                       (* columns : string list list *)
-          [json]
-          |> filter_member "columns"
-          |> flatten
-          |> List.map to_column in
+          json
+          |> member "columns"
+          |> to_list
+          |> List.map to_string_list in
 
         Some (table_name, column_names, columns)
       with
@@ -56,14 +55,17 @@ let create_full_table (db: database) (tablename : string) json =
 
 let load_table (db : database) (dbname: string) (tablename : string) =
     let path = "./" ^ dbname ^ "/" ^ tablename ^ ".json" in
-    match
+    if not (Sys.file_exists path) then Failure ("Cannot find table " ^ tablename
+        ^ " in directory " ^ dbname ^ ".\n")
+    else match
       (try
         Some (Yojson.Basic.from_file path)
        with
        | _ -> None)
     with
     | Some table -> create_full_table db tablename table
-    | None -> Failure ("Cannot find/parse table " ^ tablename ^ ".\n")
+    | None -> Failure ("Cannot parse table " ^ tablename ^ " in directory "
+        ^ dbname ^ ".\n")
 
 let create_database (dbname: string) json =
     let open Yojson.Basic.Util in
@@ -74,15 +76,15 @@ let create_database (dbname: string) json =
           |> member "dbName"
           |> to_string in
         let tables =
-          [json]
-          |> filter_member "tables"
-          |> flatten
-          |> List.map to_string in
+          json
+          |> member "tables"
+          |> to_string_list in
         Some (dbname, tables)
       with
       | _ -> None)
     with
-    | None -> Failure ("Cannot parse database " ^ dbname ^ ".\n")
+    | None -> Failure ("Cannot parse file ./" ^ dbname ^ "/" ^ dbname ^ ".json\n")
+
     | Some (dbname, tables) -> (match InternalRep.create_database dbname with
                                 | Success db -> UpdateJson.watch_for_update db;
                                                 one_by_one db (load_table db dbname) tables
@@ -102,3 +104,5 @@ let load_db (dbname : string) =
 
 (* CHECK ALL FAILWITH NOOOOO *)
 (* TO COMPILE: cs3110 compile -t -p async -p yojson readJson.ml *)
+
+(* remove directory *)
