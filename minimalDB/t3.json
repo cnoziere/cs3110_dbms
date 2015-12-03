@@ -1,5 +1,5 @@
 {
   "tableName": "t3",
-  "columnNames": [],
-  "columns": []
+  "columnNames": ["hi"],
+  "columns": [["cool", "as", "a", "cucumber"]]
 }
