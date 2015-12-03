@@ -308,7 +308,7 @@ let select db params =
  *)
 let print db name = match name with
   | [] -> PFailure("Error PRINT: no table name.")
-  | h::[] -> Operation.get_table db h
+  | h::[] -> TRes(h, Operation.get_table db h)
   | _ -> PFailure("Error PRINT: too many parameters.")
 
 (**
@@ -388,17 +388,24 @@ let print_row row =
     | [] -> printf "%s" "No values"
     | h::t -> printf "%s" h; print_rec t
 
-let print_cols col_lst =
-  let rows = cols_to_rows col_lst in
-  printf "%s" "\n";
-  List.iter print_row rows
+let print_cols db tablename col_lst =
+  match InternalRep.get_column_names db tablename with
+  | ColNames column_names ->
+      let rec helper lst = match lst with
+                           | [] -> ()
+                           | h::[] -> printf "%s" h
+                           | h::t -> printf "%s, " h; helper t in
+      helper column_names;
+      let rows = cols_to_rows col_lst in
+      printf "%s" "\n";
+      List.iter print_row rows
+  | _ -> ()
 
 let print_result res = match res with
   | Success _ -> printf "%s\n" "Success"
   | Failure x -> printf "%s\n" x
   | PMessage x -> printf "%s\n" x
   | PFailure x -> printf "%s\n" x
-  | OpColumn x -> print_cols x
   | _ -> printf "%s\n" "Could not print--will not reach this case."
 
 (**
@@ -409,10 +416,12 @@ let rec repl_db db =
   printf "\n> ";
   Reader.read_line stdin >>= fun i ->
   match i with
-  | `Eof -> repl_db db                                      (* ????????????????????? *)
+  | `Eof -> repl_db db
   | `Ok input -> evaluate_db db input >>= fun evaluated ->
                  let first = fst evaluated in
-                 print_result first;
+                 let _ = (match first with
+                          | TRes (a, (OpColumn x)) -> print_cols db a x
+                          | _ -> print_result first) in
                  let continue = snd evaluated in
                  let database = match first with
                                 | Success x -> x
@@ -424,7 +433,7 @@ let rec repl () =
   printf "\n> ";
   Reader.read_line stdin >>= fun i ->
   match i with
-  | `Eof -> repl ()                                       (* ?????????????????????????????? *)
+  | `Eof -> repl ()
   | `Ok input -> evaluate input >>= fun evaluated ->
                  let first = fst evaluated in
                  print_result first;

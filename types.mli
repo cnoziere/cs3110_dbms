@@ -59,4 +59,4 @@ type result =
     | OpColumn of value list list
     | ColNames of string list
     | Keys of key list
-    | Json of json
+    | TRes of string * result
