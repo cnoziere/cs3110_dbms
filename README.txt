@@ -108,6 +108,7 @@ SELECT * FROM DoctorWho
 
 DELETE FROM SesameSt WHERE (TeamNumber=3)
 DELETE * FROM DoctorWho
+INSERT INTO DoctorWho (Name, Species, Planet) VALUES (Twelve, TimeLord, Galiffrey)
 DROP TABLE SesameSt
 
 LOAD minimalDB
