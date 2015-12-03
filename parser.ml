@@ -121,24 +121,23 @@ let drop_table db params = match params with
 let insert_into db params =
   let rec split_lists lst is_before cols vals = match lst with
     | [] -> (cols, vals)
-    | h::t when is_before -> begin
-        if (String.lowercase h)="values" then split_lists t false cols vals
-        else split_lists t true (cols@[h]) vals
-      end
-    | h::t -> split_lists t false cols (vals@[h]) in
+    | h::t when is_before ->
+        if (String.lowercase h) = "values" then split_lists t false cols vals
+        else split_lists t true (cols @ [h]) vals
+    | h::t -> split_lists t false cols (vals @ [h]) in
+
   match params with
     | [] -> PFailure("Error INSERT INTO: no tablename.")
     | h::[] -> PFailure("Error INSERT INTO: no columns or values.")
-    | h::t -> begin
+    | h::t ->
         let lists = split_lists t true [] [] in
         let cols = fst lists in
         let vals = snd lists in
-        if cols=[] then PFailure("Error INSERT INTO: no column names.")
-        else if vals=[] then PFailure("Error INSERT INTO: no values.")
-        else if (List.length cols)<>(List.length vals) then
+        if cols = [] then PFailure("Error INSERT INTO: no column names.")
+        else if vals = [] then PFailure("Error INSERT INTO: no values.")
+        else if (List.length cols) <> (List.length vals) then
           PFailure("Error INSERT INTO: number of columns does not match values.")
         else Operation.add_row db h cols vals
-      end
 
 (**
  * Helper function to parse WHERE statements.
@@ -146,7 +145,7 @@ let insert_into db params =
  * Returns None for invalid forms, Some (col_name, op, value)
  *)
 let parse_where lst =
-  if lst=[] then None else
+  if lst = [] then None else
   let param_str = String.concat "" lst in
 
   let eq  =   Str.regexp ("\\([A-Za-z0-9]+=[A-Za-z0-9]+\\)" ^ "$") in
@@ -188,20 +187,19 @@ let delete_from db params =
     | h::[] -> PFailure("Error DELETE FROM: no WHERE conditions.")
     | h::ha::[] when (String.lowercase ha)="where" ->
         PFailure("Error DELETE FROM: no WHERE conditions.")
-    | h::ha::t when (String.lowercase ha)="where" -> begin
+    | h::ha::t when (String.lowercase ha)="where" ->
         let where = parse_where t in
         (match where with
           | None -> PFailure("Error DELETE FROM: invalid WHERE conditions.")
-          | Some(c,o,v) -> Operation.delete_row db h (Some(c,o,v))
-        )
-      end
+          | Some(c,o,v) -> Operation.delete_row db h (Some(c,o,v)))
     | _ -> PFailure("Error DELETE FROM: parameters must match [tablename WHERE].") in
+
   match params with
-    | h::ha::hb::[] when h="*"&&(String.lowercase ha)="from" ->
+    | h::ha::hb::[] when h = "*" && (String.lowercase ha) = "from" ->
         Operation.delete_row db hb None
-    | h::ha::t when h="*"&&(String.lowercase ha)="from" ->
+    | h::ha::t when h = "*" && (String.lowercase ha) = "from" ->
         PFailure("Error DELETE FROM: too many tablename parameters.")
-    | h::t when (String.lowercase h)="from" -> parse_from t
+    | h::t when (String.lowercase h) = "from" -> parse_from t
     | _ -> PFailure("Error DELETE FROM: invalid parameters.")
 
 (**
@@ -216,11 +214,12 @@ let delete_from db params =
 let update db params =
   let rec split_lists lst is_before pairs where = match lst with
     | [] -> (pairs, where)
-    | h::t when is_before -> begin
-        if (String.lowercase h)="where" then split_lists t false pairs where
-        else split_lists t true (pairs@[h]) where
-      end
-    | h::t -> split_lists t false pairs (where@[h]) in
+    | h::t when is_before ->
+        if (String.lowercase h) = "where"
+        then split_lists t false pairs where
+        else split_lists t true (pairs @ [h]) where
+    | h::t -> split_lists t false pairs (where @ [h]) in
+
   let split_set set =
     let match_fst = Str.regexp "\\([A-Za-z0-9]+=\\)" in
     let match_snd = Str.regexp "\\(='[A-Za-z0-9]+'\\)" in
@@ -229,11 +228,11 @@ let update db params =
     let rec clean lst result = match lst with
       | [] -> result
       | h::t when Str.string_match match_fst h 0 ->
-          clean t (Str.split split_on h)@result
+          clean t (Str.split split_on h) @ result
       | h::t when Str.string_match match_snd h 0 ->
-          clean t (Str.split split_on h)@result
+          clean t (Str.split split_on h) @ result
       | h::t when Str.string_match match_all h 0 ->
-          clean t (Str.split split_on h)@result
+          clean t (Str.split split_on h) @ result
       | _ -> [] in
     let rec extract lst cols vals = match lst with
       | [] -> (cols, vals)
@@ -241,10 +240,11 @@ let update db params =
       | _ -> ([], []) in
     let cleaned = clean set [] in
     extract cleaned [] [] in
+
   match params with
     | [] -> PFailure("Error UPDATE: no tablename.")
     | h::[] -> PFailure("Error UPDATE: no columns or values.")
-    | h::ha::t when (String.lowercase ha)="set"->
+    | h::ha::t when (String.lowercase ha) = "set"->
         let lists = split_lists t true [] [] in
         let set = fst lists in
         let after_where = snd lists in
@@ -252,14 +252,13 @@ let update db params =
         let new_cols = fst parsed_set in
         let new_vals = snd parsed_set in
         let where = parse_where after_where in
-        if new_cols=[] then PFailure("Error UPDATE: invalid SET")
-        else if new_vals=[] then PFailure("Error UPDATE: invalid SET")
-        else if (List.length new_cols)<>(List.length new_vals) then
+        if new_cols = [] then PFailure("Error UPDATE: invalid SET")
+        else if new_vals = [] then PFailure("Error UPDATE: invalid SET")
+        else if (List.length new_cols) <> (List.length new_vals) then
           PFailure("Error UPDATE: invalid SET")
         else (match where with
           | None -> PFailure("Error UPDATE: invalid WHERE")
-          | Some(c,o,v) -> Operation.update db h new_cols new_vals (Some(c,o,v))
-        )
+          | Some(c,o,v) -> Operation.update db h new_cols new_vals (Some(c,o,v)))
     | h::t -> PFailure("Error UPDATE: must match SET and WHERE.")
 
 (**
@@ -273,35 +272,34 @@ let select db params =
   let rec split_lists lst is_before cols tname = match lst with
     | [] -> (cols, tname)
     | h::t when is_before -> begin
-        if (String.lowercase h)="from" then split_lists t false cols tname
-        else split_lists t true (cols@[h]) tname
+        if (String.lowercase h) = "from" then split_lists t false cols tname
+        else split_lists t true (cols @ [h]) tname
       end
-    | h::t -> split_lists t false cols (tname@[h]) in
+    | h::t -> split_lists t false cols (tname @ [h]) in
   let parse_lists params =
     let lists = split_lists params true [] [] in
     let col = fst lists in
     let tname = snd lists in
-    if col=[] then PFailure("Error SELECT: no column names.") else
+    if col = [] then PFailure("Error SELECT: no column names.") else
     (match tname with
       | [] -> PFailure("Error SELECT: no tablename.")
       | h::[] -> Operation.select db h (Some(col)) None
-      | h::ha::t when (String.lowercase ha)="where" ->
+      | h::ha::t when (String.lowercase ha) = "where" ->
           (let where = parse_where t in
           (match where with
             | None -> PFailure("Error SELECT: invalid WHERE conditions.")
-            | Some(c,o,v) -> Operation.select db h (Some(col)) (Some(c,o,v))
-          ))
+            | Some(c,o,v) -> Operation.select db h (Some(col)) (Some(c,o,v))))
       | _ -> PFailure("Error SELECT: too many tablename parameters.")) in
   match params with
     | [] -> PFailure("Error SELECT: no columns or values.")
-    | h::ha::hb::[] when h="*"&&(String.lowercase ha)="from" ->
+    | h::ha::hb::[] when h = "*" && (String.lowercase ha) = "from" ->
         Operation.select db hb None None
-    | h::ha::hb::hc::t when h="*"&&(String.lowercase ha)="from"&&(String.lowercase hc)="where" ->
+    | h::ha::hb::hc::t when h = "*" && (String.lowercase ha) = "from" && (String.lowercase hc) = "where" ->
         let where = parse_where t in
         (match where with
           | None -> PFailure("Error SELECT: invalid WHERE conditions.")
           | Some(c,o,v) -> Operation.select db hb None (Some(c,o,v)))
-    | h::ha::t when h="*"&&(String.lowercase ha)="from" ->
+    | h::ha::t when h = "*" && (String.lowercase ha) = "from" ->
         PFailure("Error SELECT: invalid tablename parameters.")
     | xs -> parse_lists xs
 
