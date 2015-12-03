@@ -1,6 +1,7 @@
 open Yojson.Basic
 open InternalRep
 open Types
+open Async.Std
 
 let to_string (lst : string list) =
   List.map (fun x -> `String x) lst
@@ -28,21 +29,23 @@ let table_to_json (db : database) (tablename : string) =
                        ("columnNames", `List (to_string column_names));
                        ("columns", `List columns')] in
       Json table
-  | _ -> Failure ("No table named " ^ tablename ^ " in database " ^ dbname)
+  | _ -> failwith ("This should never pattern match")
 
 (* writes a table JSON value to the specified file name *)
 (* attention: Writer.write overwrites the contents of the previous file *)
+let write_to_file json path =
+  let data = pretty_to_string json in
+  Writer.open_file "tmp.json" >>=
+  fun t -> Writer.write t data; Writer.close t >>=
+  fun _ -> Writer.open_file path >>=
+  fun t' -> Writer.write t' data; Writer.close t'
+
 let table_to_file (db : database) (tablename : string) =
-  let open Async.Std in
   let dbname = db.name in
   let path =  "./" ^ dbname ^ "/" ^ tablename ^ ".json" in
   match table_to_json db tablename with
-  | Json table -> Writer.open_file "tmp.json" >>=
-                  (fun t -> Writer.write t (pretty_to_string table);
-                  Writer.close t >>=
-                  (fun () -> let _ = Sys.rename "tmp.json" path in
-                  return (Success db)))
-  | f -> return f
+  | Json table -> write_to_file table path
+  | _ -> failwith ("This should never pattern match")
 
 (* converts a database into a JSON value *)
 let database_to_json (db : database) =
@@ -54,36 +57,20 @@ let database_to_json (db : database) =
 (* attention: Writer.write overwrites the contents of the previous file *)
 let database_to_file (db : database) =
   let json = database_to_json db in
-  (* let dbname = db.name in *)
-  let d1 = let open Async.Std in
-           Writer.open_file "tmp.json" >>=
-          (fun t -> Writer.write t (pretty_to_string json); Writer.close t) in
-
-  ignore d1
-  (* Async.Std.upon d1 (fun () ->
-    let path  = "./" ^ dbname ^ "/" ^ dbname ^ ".json" in
-    if Sys.file_exists path then Sys.remove path else ();
-    Sys.rename "tmp.json" path) *)
+  let dbname = db.name in
+  let path  = "./" ^ dbname ^ "/" ^ dbname ^ ".json" in
+  write_to_file json path
 
 (* checks to see if the database has been updated and if so
 writes the database to file *)
 let rec watch_for_update (db : database) =
   Async.Std.upon (updated db)
   (fun (db', tablename) -> watch_for_update db';
-  match (List.mem tablename (InternalRep.get_table_names db),
-  List.mem tablename (InternalRep.get_table_names db')) with
-  | (true, true) -> ignore (table_to_file db' tablename)
-  | (true, false) -> Sys.remove ("./" ^ db.name ^ "/" ^ tablename ^ ".json");
-                     ignore (database_to_file db')
-  | (false, true) -> let _ = table_to_file db' tablename in
-                     let _ = database_to_file db' in ()
-  | (false, false) -> ())
-
-  (* match (List.mem tablename (InternalRep.get_table_names db),
-  List.mem tablename (InternalRep.get_table_names db')) with
-  | (true, true) -> ignore (table_to_file db' tablename)
-  | (true, false) -> Sys.remove ("./" ^ db.name ^ "/" ^ tablename ^ ".json");
-                     ignore (database_to_file db')
-  | (false, true) -> ignore (table_to_file db' tablename);
-                     ignore (database_to_file db')
-  | (false, false) -> failwith "This will never pattern match") *)
+    let check = fun x -> List.mem tablename (InternalRep.get_table_names x) in
+    match (check db, check db') with
+    | (true, true)   -> ignore (table_to_file db' tablename)     (* modified table *)
+    | (true, false)  -> ignore (Sys.remove ("./" ^ db.name ^ "/" ^ tablename ^ ".json") >>=
+                        fun () -> database_to_file db')          (* removed table *)
+    | (false, true)  -> ignore (table_to_file db' tablename >>= fun _ ->
+                        database_to_file db')                    (* added table *)
+    | (false, false) -> ())

@@ -15,7 +15,7 @@ val table_to_json: database -> string -> Types.result
  * Failure some_error_message.
  * The file is written to the path './dbname/t.json' where dbname
  * is the name of db. *)
-val table_to_file: database -> string -> Types.result Deferred.t
+val table_to_file: database -> string -> unit Deferred.t
 
 (* [databse_to_json db] converts db into a JSON value *)
 val database_to_json: database -> Yojson.Basic.json
@@ -23,7 +23,7 @@ val database_to_json: database -> Yojson.Basic.json
 (* [database_to_file db] writes db file.
  * The database is written to the file './dbname/dbname.json' where
  * dbname is the name of db. *)
-val database_to_file: database -> unit
+val database_to_file: database -> unit Deferred.t
 
 (* [watch_for_update db] writes a table to file when it has been modified
  * or writes the current database to file when a table is added/removed. *)
