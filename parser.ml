@@ -90,18 +90,17 @@ let load params = match params with
   | _ -> PFailure("Error LOAD: too many parameters.")
 
 let create_database params = match params with
-  | [] -> PFailure("Error CREATE DATABASE: no name.")
-  | h::[] -> begin
-      if ReadJson.ok_to_create_database h then begin
+  | [] -> return (PFailure "Error CREATE DATABASE: no name.")
+  | h::[] ->
+      ReadJson.ok_to_create_database h >>= fun b ->
+      if b then
         let res = Operation.create_database h in
         (match res with
           | Success db -> UpdateJson.watch_for_update db
           | _ -> ());
-        res
-      end
-      else Failure("Database " ^ h ^ " already exists.")
-    end
-  | _ -> PFailure("Error CREATE DATABASE: too many parameters.")
+        return res
+      else return (Failure ("Database " ^ h ^ " already exists."))
+  | _ -> return (PFailure "Error CREATE DATABASE: too many parameters.")
 
 let create_table db params = match params with
   | [] -> PFailure("Error CREATE TABLE: no table name.")
@@ -319,46 +318,51 @@ let print db name = match name with
  * All keywords are case insensitive.
  *)
 
+let to_normal (d, b) =
+  d >>= fun r -> return (r, b)
+
 let evaluate_db db input =
   let word_lst = Str.split (Str.regexp "[ \t,()]+") input in
   match word_lst with
-    | h::t when (String.lowercase h)="exit" -> exit t
-    | h::t when (String.lowercase h)="help" -> (help t, true)
-    | h::t when (String.lowercase h)="load" -> (load t, true)
-    | h::ha::t when (String.lowercase h)="create"&&(String.lowercase ha)="database" ->
-        (create_database t, true)
-    | h::ha::t when (String.lowercase h)="create"&&(String.lowercase ha)="table" ->
-        (create_table db t, true)
-    | h::ha::t when (String.lowercase h)="drop"&&(String.lowercase ha)="table" ->
-        (drop_table db t, true)
-    | h::ha::t when (String.lowercase h)="insert"&&(String.lowercase ha)="into" ->
-        (insert_into db t, true)
-    | h::t when (String.lowercase h)="delete" -> (delete_from db t, true)
-    | h::t when (String.lowercase h)="update" -> (update db t, true)
-    | h::t when (String.lowercase h)="select" -> (select db t, true)
-    | h::t when (String.lowercase h)="print" -> (print db t, true)
-    | _ -> (PFailure("Error: command not recognized."), true)
+    | h::t when (String.lowercase h) = "exit" -> return (exit t)
+    | h::t when (String.lowercase h) = "help" -> return (help t, true)
+    | h::t when (String.lowercase h) = "load" -> return (load t, true)
+    | h::ha::t when (String.lowercase h) = "create" && (String.lowercase ha) = "database" ->
+        to_normal (create_database t, true)
+    | h::ha::t when (String.lowercase h) = "create" && (String.lowercase ha) = "table" ->
+        return (create_table db t, true)
+    | h::ha::t when (String.lowercase h) = "drop" && (String.lowercase ha) = "table" ->
+        return (drop_table db t, true)
+    | h::ha::t when (String.lowercase h) = "insert" && (String.lowercase ha) = "into" ->
+        return (insert_into db t, true)
+    | h::t when (String.lowercase h) = "delete" -> return (delete_from db t, true)
+    | h::t when (String.lowercase h) = "update" -> return (update db t, true)
+    | h::t when (String.lowercase h) = "select" -> return (select db t, true)
+    | h::t when (String.lowercase h) = "print" -> return (print db t, true)
+    | _ -> return (PFailure("Error: command not recognized."), true)
 
 let evaluate input =
   let db_fail = (PFailure("Error: must load or create a database first."), true) in
   let word_lst = Str.split (Str.regexp "[ \t,()]+") input in
   match word_lst with
-    | h::t when (String.lowercase h)="exit" -> exit t
-    | h::t when (String.lowercase h)="help" -> (help t, true)
-    | h::t when (String.lowercase h)="load" -> (load t, true)
-    | h::ha::t when (String.lowercase h)="create"&&(String.lowercase ha)="database" ->
-        (create_database t, true)
-    | h::ha::t when (String.lowercase h)="create"&&(String.lowercase ha)="table" ->
-        db_fail
-    | h::ha::t when (String.lowercase h)="drop"&&(String.lowercase ha)="table" ->
-        db_fail
-    | h::ha::t when (String.lowercase h)="insert"&&(String.lowercase ha)="into" ->
-        db_fail
-    | h::t when (String.lowercase h)="delete" -> db_fail
-    | h::t when (String.lowercase h)="update" -> db_fail
-    | h::t when (String.lowercase h)="select" -> db_fail
-    | h::t when (String.lowercase h)="print" -> db_fail
-    | _ -> (PFailure("Error: command not recognized."), true)
+    | h::t when (String.lowercase h) = "exit" -> return (exit t)
+    | h::t when (String.lowercase h) = "help" -> return (help t, true)
+    | h::t when (String.lowercase h) = "load" -> return (load t, true)
+    | h::ha::t when (String.lowercase h) = "create" && (String.lowercase ha) = "database" ->
+        to_normal (create_database t, true)
+    | h::ha::t when (String.lowercase h) = "create" && (String.lowercase ha) = "table" ->
+        return db_fail
+    | h::ha::t when (String.lowercase h) = "drop" && (String.lowercase ha) = "table" ->
+        return db_fail
+    | h::ha::t when (String.lowercase h) = "insert" && (String.lowercase ha) = "into" ->
+        return db_fail
+    | h::t -> let b = (String.lowercase h) = "delete" ||
+                      (String.lowercase h) = "update" ||
+                      (String.lowercase h) = "select" ||
+                      (String.lowercase h) = "print" in
+              if b then return db_fail
+              else return (PFailure("Error: command not recognized."), true)
+    | _ -> return (PFailure("Error: command not recognized."), true)
 
 (** Functions to print results from evaluation. *)
 
@@ -408,7 +412,7 @@ let rec repl_db db =
   Reader.read_line stdin >>= fun i ->
   match i with
   | `Eof -> repl_db db                                      (* ????????????????????? *)
-  | `Ok input -> let evaluated = evaluate_db db input in
+  | `Ok input -> evaluate_db db input >>= fun evaluated ->
                  let first = fst evaluated in
                  print_result first;
                  let continue = snd evaluated in
@@ -423,7 +427,7 @@ let rec repl () =
   Reader.read_line stdin >>= fun i ->
   match i with
   | `Eof -> repl ()                                       (* ?????????????????????????????? *)
-  | `Ok input -> let evaluated = evaluate input in
+  | `Ok input -> evaluate input >>= fun evaluated ->
                  let first = fst evaluated in
                  print_result first;
                  let continue = snd evaluated in
