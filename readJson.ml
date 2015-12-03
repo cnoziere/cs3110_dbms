@@ -106,34 +106,16 @@ let load_db (dbname : string) =
     | Some json -> create_db dbname json
     | None -> Failure ("Cannot parse the following file: " ^ path ^ "\n")
 
-(* let delete_tables db json (path : string) =
-    let open Yojson.Basic.Util in
-    match
-      (try
-        let tables =
-          json
-          |> member "tables"
-          |> to_string_list in
-        Some tables
-      with
-      | _ -> None)
-    with
-    | None -> Failure ("The following file cannot be parsed: " ^ path ^ "\n")
-    | Some tables -> List.iter (fun t -> Sys.remove (t ^ ".json")) tables;
-                     Success db
+let delete_table (p1 : string) (tablename : string) =
+  let path = p1 ^ "/" ^ tablename ^ ".json" in
+  if Sys.file_exists path then Sys.remove path else ()
 
 let drop_db (db : database) =
     let dbname = db.name in
     let p1 = "./" ^ dbname in
     let p2 = "./" ^ dbname ^ "/" ^ dbname ^ ".json" in
     match (Sys.file_exists p1, Sys.file_exists p2) with
-    | (true, true) -> (match (try Some (Yojson.Basic.from_file p2) with _ -> None) with
-                       | Some json -> (match delete_tables db json p2 with
-                                       | Failure s -> Failure s
-                                       | Success _ -> Unix.rmdir dbname; Success db)
-                       | None -> Failure ("Cannot parse the following file: "
-                        ^ path ^ "\n"))
-    | (true, false) -> Unix.rmdir dbname; Success db
-    | _ -> Success db *)
-
-(* add functionality to remove a database *)
+    | (true, true) -> let tablenames = get_table_names db in
+                      List.iter (delete_table p1) tablenames
+    | (true, false) -> Unix.rmdir dbname
+    | _ -> ()
