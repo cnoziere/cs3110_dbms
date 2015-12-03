@@ -23,6 +23,7 @@ val create_database: string -> result
  *)
 val updated: database -> (database * string) Deferred.t
 
+(*
 (**
  * Get name of current database
  *)
@@ -32,6 +33,7 @@ val get_name: database -> string
  * Set name of current database
  *)
 val set_name: string -> database -> result
+*)
 
 (**
  * Create table, given the table name and a list of the column names

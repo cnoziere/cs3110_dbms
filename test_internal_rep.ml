@@ -74,6 +74,7 @@ TEST "CREATE_DATABASE_returns_success" =
     | Failure msg -> print_endline msg; false
     | _ -> false
 
+(*
 TEST "SET_NAME_returns_success" =
     print_endline "SET_NAME_returns_success";
     match create_database "(reset myDB)" with
@@ -85,7 +86,7 @@ TEST "SET_NAME_returns_success" =
         | _ -> false)
     | Failure msg -> print_endline msg; false
     | _ -> false
-
+*)
 
 TEST "CREATE_TABLE_returns_success" =
     print_endline "CREATE_TABLE_returns_success";
