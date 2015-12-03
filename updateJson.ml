@@ -68,7 +68,6 @@ writes the database to file *)
 let rec watch_for_update (db : database) =
   Async.Std.upon (updated db)
   (fun (db', tablename) -> watch_for_update db';
-
   match (List.mem tablename (InternalRep.get_table_names db),
   List.mem tablename (InternalRep.get_table_names db')) with
   | (true, true) -> ignore (table_to_file db' tablename)

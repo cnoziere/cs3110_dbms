@@ -53,7 +53,8 @@ let create_full_table (db: database) (tablename : string) json =
       ". columnNames and column should be of the same length.\n")
       else InternalRep.create_whole_table db table_name column_names columns
 
-let load_table (db : database) (dbname: string) (tablename : string) =
+let load_table (db : database) (tablename : string) =
+    let dbname = db.name in
     let path = "./" ^ dbname ^ "/" ^ tablename ^ ".json" in
     if not (Sys.file_exists path) then Failure ("Cannot find table " ^ tablename
         ^ " in directory " ^ dbname ^ ".\n")
@@ -66,6 +67,13 @@ let load_table (db : database) (dbname: string) (tablename : string) =
     | Some table -> create_full_table db tablename table
     | None -> Failure ("Cannot parse table " ^ tablename ^ " in directory "
         ^ dbname ^ ".\n")
+
+let rec load_tables db tables =
+    match tables with
+    | [] -> Success db
+    | hd :: tl -> match load_table db hd with
+                  | Success db' -> load_tables db' tl
+                  | s -> s
 
 let create_database (dbname: string) json =
     let open Yojson.Basic.Util in
@@ -84,25 +92,53 @@ let create_database (dbname: string) json =
       | _ -> None)
     with
     | None -> Failure ("Cannot parse file ./" ^ dbname ^ "/" ^ dbname ^ ".json\n")
-
     | Some (dbname, tables) -> (match InternalRep.create_database dbname with
                                 | Success db -> UpdateJson.watch_for_update db;
-                                                one_by_one db (load_table db dbname) tables
+                                                load_tables db tables
                                 | Failure s -> Failure s
                                 | _ -> failwith "This should never pattern match")
 
-(* filename should be of form __.json *)
 let load_db (dbname : string) =
     let path = "./" ^ dbname ^ "/" ^ dbname ^ ".json" in
-    match
+    if not (Sys.file_exists path) then Failure ("Cannot find database " ^ dbname
+        ^ " in current directory.\n")
+    else match
       (try
       Some (Yojson.Basic.from_file path)
       with _ -> None)
     with
-    | None -> Failure ("Cannot find/parse the file at the following path: " ^ path ^ "\n")
     | Some json -> create_database dbname json
+    | None -> Failure ("Cannot parse the following file: " ^ path ^ "\n")
 
-(* CHECK ALL FAILWITH NOOOOO *)
-(* TO COMPILE: cs3110 compile -t -p async -p yojson readJson.ml *)
+(* let delete_tables db json (path : string) =
+    let open Yojson.Basic.Util in
+    match
+      (try
+        let tables =
+          json
+          |> member "tables"
+          |> to_string_list in
+        Some tables
+      with
+      | _ -> None)
+    with
+    | None -> Failure ("The following file cannot be parsed: " ^ path ^ "\n")
+    | Some tables -> List.iter (fun t -> Sys.remove (t ^ ".json")) tables;
+                     Success db
 
-(* remove directory *)
+let drop_db (db : database) =
+    let dbname = db.name in
+    let p1 = "./" ^ dbname in
+    let p2 = "./" ^ dbname ^ "/" ^ dbname ^ ".json" in
+    match (Sys.file_exists p1, Sys.file_exists p2) with
+    | (true, true) -> (match (try Some (Yojson.Basic.from_file p2) with _ -> None) with
+                       | Some json -> (match delete_tables db json p2 with
+                                       | Failure s -> Failure s
+                                       | Success _ -> Unix.rmdir dbname; Success db)
+                       | None -> Failure ("Cannot parse the following file: "
+                        ^ path ^ "\n"))
+    | (true, false) -> Unix.rmdir dbname; Success db
+    | _ -> Success db *)
+
+(* add functionality to remove a database *)
+(* check all failwith no *)
