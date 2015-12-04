@@ -10,6 +10,10 @@ open Types
 let test_async_eq (d : 'a Async.Std.Deferred.t) (v : 'a) : bool =
   Async.Std.Thread_safe.block_on_async (fun () -> d) = Core.Std.Result.Ok v
 
+let test_success = function
+  | Success _ -> true
+  | _ -> false
+
 let rec traverse = function
   | hd :: tl -> Sys.remove ("RJtest/" ^ hd) >>= fun () -> traverse tl
   | [] -> return ()
@@ -47,20 +51,63 @@ TEST_MODULE "ok_to_create_db" = struct
 end
 
 TEST_MODULE "create_db" = struct
-  (* no table file *)
+  (* no table files *)
   let _ = Async.Std.Thread_safe.block_on_async (fun () -> remove_dir ())
   let j = `Assoc [("dbName", `String "RJtest");
-          ("tables", `List [`String "t1"; `String "t2"; `String "t3"])]
-  let () = Yojson.Basic.to_file "RJtest.json" j
+          ("tables", `List [`String "t1"; `String "t2"])]
   TEST = create_db "RJtest" j = Failure ("Cannot find table t1 in directory RJtest.\n")
 
+  (* t1 but no t2 file *)
+  let _ = Async.Std.Thread_safe.block_on_async (fun () -> create_dir ())
+  let j = `Assoc [("dbName", `String "RJtest");
+          ("tables", `List [`String "t1"; `String "t2"])]
+  let t1 = `Assoc [("tableName", `String "t1");
+   ("columnNames", `List [`String "Name"; `String "Age"; `String "Color"]);
+   ("columns",
+    `List
+      [`List [`String "Constance"; `String "Asta"; `String "Amanda"];
+       `List [`String "12"; `String "13"; `String "14"];
+       `List [`String "Blue"; `String "Green"; `String "Purple"]])]
+  let () = Yojson.Basic.to_file "RJtest/t1.json" t1
+  TEST = create_db "RJtest" j = Failure ("Cannot find table t2 in directory RJtest.\n")
+
   (* improper db file *)
-    (* Failure ("Cannot parse file ./" ^ dbname ^ "/" ^ dbname ^ ".json\n") *)
+  let _ = Async.Std.Thread_safe.block_on_async (fun () -> remove_dir ())
+  let j = `Assoc [("dbName", `String "RJtest")]
+  TEST = create_db "RJtest" j = Failure ("Cannot parse the following file: ./RJtest/RJtest.json\n")
 
   (* improper table file *)
-    (* Failure ("Cannot parse table " ^ tablename ^ " in directory " ^ dbname ^ ".\n") *)
+  (* let _ = Async.Std.Thread_safe.block_on_async (fun () -> create_dir ())
+  let j = `Assoc [("dbName", `String "RJtest");
+          ("tables", `List [`String "t1"; `String "t2"])]
+  let t1 = `Assoc [("tableName", `String "t1");
+   ("columnNames", `List [`String "Name"; `String "Age"; `String "Color"]);
+   ("columns",
+    `List
+      [`List [`String "Constance"; `String "Asta"; `String "Amanda"];
+       `List [`String "12"; `String "13"; `String "14"];
+       `List [`String "Blue"; `String "Green"; `String "Purple"]])]
+  let () = Yojson.Basic.to_file "RJtest/t1.json" t1
+  TEST = create_db "RJtest" j = Failure ("Cannot parse table t1 in directory RJtest.\n") *)
 
   (* success *)
+  let _ = Async.Std.Thread_safe.block_on_async (fun () -> create_dir ())
+  let j = `Assoc [("dbName", `String "RJtest");
+          ("tables", `List [`String "t1"; `String "t2"])]
+  let t1 = `Assoc [("tableName", `String "t1");
+   ("columnNames", `List [`String "Name"; `String "Age"; `String "Color"]);
+   ("columns",
+    `List
+      [`List [`String "Constance"; `String "Asta"; `String "Amanda"];
+       `List [`String "12"; `String "13"; `String "14"];
+       `List [`String "Blue"; `String "Green"; `String "Purple"]])]
+  let t2 = `Assoc [("tableName", `String "t3"); ("columnNames", `List [`String "hi"]);
+   ("columns",
+    `List
+      [`List [`String "cool"; `String "as"; `String "a"; `String "cucumber"]])]
+  let () = Yojson.Basic.to_file "RJtest/t1.json" t1
+  let () = Yojson.Basic.to_file "RJtest/t2.json" t2
+  TEST = test_success (create_db "RJtest" j)
 end
 
 TEST_MODULE "create_full_table" = struct

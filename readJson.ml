@@ -88,7 +88,7 @@ let create_db (dbname: string) json =
       with
       | _ -> None)
     with
-    | None -> Failure ("Cannot parse file ./" ^ dbname ^ "/" ^ dbname ^ ".json\n")
+    | None -> Failure ("Cannot parse the following file: ./" ^ dbname ^ "/" ^ dbname ^ ".json\n")
     | Some (dbname, tables) -> let x1 = create_database dbname in
                                let x2 = no_failure (load_tables tables) x1 in
                                let f = (fun x -> ignore(UpdateJson.watch_for_update x);
