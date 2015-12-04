@@ -3,6 +3,18 @@ open Types
 open InternalRep
 open Yojson.Basic.Util
 
+let rec traverse dirname m =
+  let open Async.Std in
+  match m with
+  | hd :: tl -> Sys.remove (dirname ^ "/" ^ hd) >>= fun () -> traverse dirname tl
+  | [] -> return ()
+
+let remove_dir (dirname : string ) =
+  let open Async.Std in
+  Sys.ls_dir dirname >>= fun l ->
+  traverse dirname l >>= fun () ->
+  Unix.rmdir dirname
+
 let ok_to_create_db (dbname : string) =
   let open Async.Std in
   let path = dbname ^ "/" ^ dbname ^ ".json" in
@@ -113,16 +125,12 @@ let delete_table (p1 : string) (tablename : string) =
   let path = p1 ^ "/" ^ tablename ^ ".json" in
   if Sys.file_exists path then Sys.remove path else ()
 
-let drop_db (db : database) =
-    let dbname = db.name in
-    let p1 = "./" ^ dbname in
-    let p2 = "./" ^ dbname ^ "/" ^ dbname ^ ".json" in
-    match (Sys.file_exists p1, Sys.file_exists p2) with
-    | (true, true) -> let tablenames = get_table_names db in
-                      List.iter (delete_table p1) tablenames;
-                      Unix.rmdir dbname; Success db
-    | (true, false) -> Unix.rmdir dbname; Success db
-    | _ -> Failure ("Database " ^ db.name ^ "does not exist.\n")
+(* let drop_db (dbname : string) =
+    let open Async.Std in
+    let path = "./" ^ dbname ^ "/" ^ dbname ^ ".json" in
+    let db = { name = ""; data = Tst.create (); updated = Ivar.create ()} in
+    if Sys.file_exists path then let () = ignore(remove_dir db) in Success db
+    else Failure ("Database " ^ dbname ^ "does not exist.\n") *)
 
 TEST_MODULE "to_string" = struct
   let l1 = `List [`String "s1"; `String "s2"; `String "s3"]
