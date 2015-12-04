@@ -99,7 +99,7 @@ let create_database params = match params with
           | Success db -> ignore(UpdateJson.watch_for_update db)
           | _ -> ());
         return res
-      else return (Failure ("Database " ^ h ^ " already exists."))
+      else return (Failure ("Error: Database " ^ h ^ " already exists."))
   | _ -> return (PFailure "Error CREATE DATABASE: too many parameters.")
 
 let create_table db params = match params with
