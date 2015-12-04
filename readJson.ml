@@ -5,19 +5,19 @@ open Yojson.Basic.Util
 
 let ok_to_create_db (dbname : string) =
   let open Async.Std in
-    let path = "./" ^ dbname ^ "/" ^ dbname ^ ".json" in
-    (Sys.file_exists_exn path) >>= (fun b ->
-      if b then return false
-      else (Unix.mkdir (~perm:0o777) dbname >>= fun () ->
-      Writer.open_file path >>=
-      fun t -> Writer.write t (Yojson.Basic.pretty_to_string `Null);
-      Writer.close t >>= fun () -> return true))
+  let path = dbname ^ "/" ^ dbname ^ ".json" in
+  (Sys.file_exists_exn dbname) >>= (fun b ->
+  if b then return false
+  else (Unix.mkdir (~perm:0o777) dbname >>= fun () ->
+  Writer.open_file path >>=
+  fun t -> Writer.write t "";
+  Writer.close t >>= fun () -> return true))
 
 let to_string_list json =
-    let open Yojson.Basic.Util in
-    json
-    |> to_list
-    |> List.map to_string
+  let open Yojson.Basic.Util in
+  json
+  |> to_list
+  |> List.map to_string
 
 let create_full_table (db: database) (tablename : string) json =
     match
@@ -117,6 +117,13 @@ let drop_db (db : database) =
     match (Sys.file_exists p1, Sys.file_exists p2) with
     | (true, true) -> let tablenames = get_table_names db in
                       List.iter (delete_table p1) tablenames;
-                      Success db
+                      Unix.rmdir dbname; Success db
     | (true, false) -> Unix.rmdir dbname; Success db
     | _ -> Failure ("Database " ^ db.name ^ "does not exist.\n")
+
+TEST_MODULE "to_string" = struct
+  let l1 = `List [`String "s1"; `String "s2"; `String "s3"]
+  let l2 = `List []
+  TEST "empty_list" = (to_string_list l2) = []
+  TEST "full_list" = (to_string_list l1) = ["s1"; "s2"; "s3"]
+end
