@@ -401,11 +401,17 @@ let print_cols db tablename col_lst =
       List.iter print_row rows
   | _ -> ()
 
+let print_cols_reg col_lst =
+  let rows = cols_to_rows col_lst in
+  Printf.printf "\n%s" "";
+  List.iter print_row rows
+
 let print_result res = match res with
   | Success _ -> printf "%s\n" "Success"
   | Failure x -> printf "%s\n" x
   | PMessage x -> printf "%s\n" x
   | PFailure x -> printf "%s\n" x
+  | OpColumn x -> print_cols_reg x
   | _ -> printf "%s\n" "Could not print--will not reach this case."
 
 (**

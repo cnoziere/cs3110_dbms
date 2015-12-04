@@ -70,6 +70,7 @@ WHERE column_name OPERATOR value
     <
     >=
     <=
+    All operators are string comparisons, as all values are saved as strings.
 
 PRINT tablename
   - Prints the table with name tablename to the terminal.
@@ -78,35 +79,37 @@ PRINT tablename
 
 Example session
 
-Try running the following commands line-by-line, while occasionally 
-calling PRINT tablename to see the effects. Also note that the .json 
-files update with every change. The files are in the directory which 
+Try running the following commands line-by-line, while occasionally
+calling PRINT tablename to see the effects. Also note that the .json
+files update with every change. The files are in the directory which
 shares the database name.
 
 
 CREATE DATABASE Characters
 
-CREATE TABLE SesameSt Name Color TeamNumber
-INSERT INTO SesameSt (Name, Color, TeamNumber) VALUES (Elmo, red, 1)
-INSERT INTO SesameSt (Name, Color, TeamNumber) VALUES (CookieMonster, blue, 3)
-INSERT INTO SesameSt (Name, Color, TeamNumber) VALUES (BigBird, yellow, 2)
+CREATE TABLE SesameSt (Name, Color, Team)
+INSERT INTO SesameSt (Name, Color, Team) VALUES (Elmo, red, a)
+INSERT INTO SesameSt (Name, Color, Team) VALUES (CookieMonster, blue, c)
+INSERT INTO SesameSt (Name, Color, Team) VALUES (BigBird, yellow, b)
 INSERT INTO SesameSt (Name, Color) VALUES (Oscar, green)
+PRINT SesameSt
 INSERT INTO SesameSt (Name, Color) VALUES (Count, purple)
-UPDATE SesameSt SET (TeamNumber=1) WHERE (Color=green)
-SELECT (Name, Color) FROM SesameSt WHERE (TeamNumber=1)
+UPDATE SesameSt SET (Team=a) WHERE (Color=green)
+SELECT (Name, Color) FROM SesameSt WHERE (Team=a)
 
 CREATE TABLE DoctorWho Name Species Planet
 INSERT INTO DoctorWho (Name, Species, Planet) VALUES (Twelve, TimeLord, Galiffrey)
 INSERT INTO DoctorWho (Name, Species) VALUES (Rose, human)
 INSERT INTO DoctorWho (Name, Species, Planet) VALUES (Strax, Sontaran, Sontar)
 INSERT INTO DoctorWho (Name, Species, Planet) VALUES (Vastra, Silurian, Earth)
+PRINT DoctorWho
 INSERT INTO DoctorWho (Name, Species, Planet) VALUES (Jack, immortal, Earth)
 INSERT INTO DoctorWho (Species, Planet) VALUES (Dalek, Skaro)
 INSERT INTO DoctorWho (Species) VALUES (Silence)
 UPDATE DoctorWho SET (Planet=Earth) WHERE (Species=human)
 SELECT * FROM DoctorWho
 
-DELETE FROM SesameSt WHERE (TeamNumber=3)
+DELETE FROM SesameSt WHERE (Team=c)
 DELETE * FROM DoctorWho
 INSERT INTO DoctorWho (Name, Species, Planet) VALUES (Twelve, TimeLord, Galiffrey)
 DROP TABLE SesameSt
