@@ -1,9 +1,10 @@
 (******************************************************************************)
 (*************************Unit Tests for UpdateJson****************************)
 (******************************************************************************)
-open Testing
-open Async.Std
 open Yojson.Basic
+open UpdateJson
+open Async.Std
+open Testing
 open Types
 
 let j = `Assoc [("dbName", `String "RJtest");
@@ -32,6 +33,18 @@ let t4 = `Assoc [("tableName", `String "t1");
     `List
       [`List [`String "13"; `String "14"];
       `List [`String "Asta"; `String "Amanda"]])]
+
+let t1' = `Assoc [("tableName", `String "t1");
+   ("columnNames", `List [`String "Name"]);
+   ("columns",
+    `List
+      [`List [`String "Asta"; `String "Amanda"]])]
+
+let r = `Assoc [("tableName", `String "t1");
+   ("columnNames", `List [`String "Name"]);
+   ("columns",
+    `List
+      [`List [`String "Asta"; `String "Amanda"; `String "Constance"]])]
 
 TEST_MODULE "table_to_json" = struct
   let _ = Thread_safe.block_on_async (fun () -> create_dir ())
@@ -83,5 +96,23 @@ TEST_MODULE "database_to_file" = struct
          | _ -> false
 end
 
-TEST_MODULE "watch_for_update" = struct
-end
+(* TEST_MODULE "watch_for_update" = struct
+  (* table modified *)
+  let _ = Thread_safe.block_on_async (fun () -> create_dir ())
+  let () = Yojson.Basic.to_file "RJtest/RJtest.json" j
+  let () = Yojson.Basic.to_file "RJtest/t1.json" t1'
+  TEST = match ReadJson.load_db "RJtest" with
+        | Success db -> let res = InternalRep.add_row db "RJtest" ["Name"] ["Constance"] in
+                        (match res with
+                        | Success db' -> let b1 = test_async_eq (Sys.file_exists_exn "RJtest/t1.json") true in
+                                         (* let b2 = db <> db' in
+                                         let b3 = (Yojson.Basic.from_file "RJtest/t1.json") = r in *)
+                                         b1
+                        | _ -> false)
+        | _ -> false
+
+  (* table added *)
+
+  (* table removed *)
+
+end *)

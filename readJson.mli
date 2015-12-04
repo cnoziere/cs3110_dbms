@@ -17,4 +17,4 @@ val ok_to_create_db: string -> bool Deferred.t
  * db from disk.
  * Returns Success if the operation was successfully completed
  * Otherwise returns Failure some_error_message *)
-(* val drop_db : database -> result *)
+val drop_db : string -> result Deferred.t

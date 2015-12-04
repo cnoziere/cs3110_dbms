@@ -20,6 +20,12 @@ let to_string_list json =
   |> to_list
   |> List.map to_string
 
+let remove dirname =
+  let open Async.Std in
+  Sys.ls_dir dirname >>= fun l ->
+  traverse l >>= fun () ->
+  Unix.rmdir dirname
+
 (* [create_full_table db tablename j] creates the table with
  * name tablename and contents as specified by the JSON value j.
  * The table is added to database db.
@@ -125,12 +131,13 @@ let delete_table (p1 : string) (tablename : string) =
   let path = p1 ^ "/" ^ tablename ^ ".json" in
   if Sys.file_exists path then Sys.remove path else ()
 
-(* let drop_db (dbname : string) =
+let drop_db (dbname : string) =
     let open Async.Std in
     let path = "./" ^ dbname ^ "/" ^ dbname ^ ".json" in
-    let db = { name = ""; data = Tst.create (); updated = Ivar.create ()} in
-    if Sys.file_exists path then let () = ignore(remove_dir db) in Success db
-    else Failure ("Database " ^ dbname ^ "does not exist.\n") *)
+    let db = {name = ""; data = Tst.create (); updated = Ivar.create ()} in
+    Sys.file_exists_exn path >>= fun b -> if b then remove dbname >>=
+    fun () -> return (Success db)
+    else return (Failure ("Database " ^ dbname ^ "does not exist.\n"))
 
 (******************************************************************************)
 (********************************UNIT TESTS************************************)
