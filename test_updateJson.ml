@@ -1,30 +1,10 @@
 (******************************************************************************)
-(** Unit tests for UpdateJson Implementation **********************************)
+(*************************Unit Tests for UpdateJson****************************)
 (******************************************************************************)
-open UpdateJson
+open Testing
 open Async.Std
 open Yojson.Basic
 open Types
-
-let test_async_eq (d : 'a Async.Std.Deferred.t) (v : 'a) : bool =
-  Async.Std.Thread_safe.block_on_async (fun () -> d) = Core.Std.Result.Ok v
-
-let rec traverse = function
-  | hd :: tl -> Sys.remove ("RJtest/" ^ hd) >>= fun () -> traverse tl
-  | [] -> return ()
-
-let create_dir () =
-  Sys.file_exists_exn "RJtest" >>= fun b ->
-  if b then Sys.ls_dir "RJtest" >>= fun l ->
-  traverse l
-  else Unix.mkdir "RJtest"
-
-let remove_dir () =
-  Sys.file_exists_exn "RJtest" >>= fun b ->
-  if b then Sys.ls_dir "RJtest" >>= fun l ->
-  traverse l >>= fun () ->
-  Unix.rmdir "RJtest"
-  else return ()
 
 let j = `Assoc [("dbName", `String "RJtest");
         ("tables", `List [`String "t1"])]
@@ -88,6 +68,19 @@ TEST_MODULE "table_to_file" = struct
 end
 
 TEST_MODULE "database_to_file" = struct
+  let _ = Thread_safe.block_on_async (fun () -> create_dir ())
+  let () = Yojson.Basic.to_file "RJtest/RJtest.json" j
+  let () = Yojson.Basic.to_file "RJtest/t1.json" t1
+  TEST = match ReadJson.load_db "RJtest" with
+         | Success db -> let _ = Thread_safe.block_on_async (fun () -> create_dir ()) in
+                         let _ = Thread_safe.block_on_async (fun () -> Sys.remove "RJtest/RJtest.json") in
+                         let b1 = test_async_eq (Sys.file_exists_exn "RJtest/RJtest.json") false in
+                         let _ = Thread_safe.block_on_async (fun () -> database_to_file db) in
+                         let b2 = test_async_eq (Sys.file_exists_exn "RJtest/RJtest.json") true in
+                         let t' = Yojson.Basic.from_file "RJtest/RJtest.json" in
+                         let b3 = t' = j in
+                         b1 && b2 && b3
+         | _ -> false
 end
 
 TEST_MODULE "watch_for_update" = struct

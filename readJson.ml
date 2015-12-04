@@ -2,18 +2,7 @@
 open Types
 open InternalRep
 open Yojson.Basic.Util
-
-(* let rec traverse dirname m =
-  let open Async.Std in
-  match m with
-  | hd :: tl -> Sys.remove (dirname ^ "/" ^ hd) >>= fun () -> traverse dirname tl
-  | [] -> return ()
-
-let remove_dir (dirname : string ) =
-  let open Async.Std in
-  Sys.ls_dir dirname >>= fun l ->
-  traverse dirname l >>= fun () ->
-  Unix.rmdir dirname *)
+open Testing
 
 let ok_to_create_db (dbname : string) =
   let open Async.Std in
@@ -31,6 +20,12 @@ let to_string_list json =
   |> to_list
   |> List.map to_string
 
+(* [create_full_table db tablename j] creates the table with
+ * name tablename and contents as specified by the JSON value j.
+ * The table is added to database db.
+ * Returns Success if the operation was successfully completed
+ * Otherwise returns Failure some_error_message
+ * val create_full_table: database -> string -> json -> result *)
 let create_full_table (db: database) (tablename : string) json =
     match
       (try
@@ -86,6 +81,11 @@ let no_failure f = function
     | Success db -> f db
     | _ -> failwith "This should never pattern match"
 
+(* [create_db dbname j] creates the database with name
+ * dbname and contents as specified by the JSON value j
+ * Returns Success if the operation was successfully completed
+ * Otherwise returns Failure some_error_message
+ * val create_db: string -> json -> result *)
 let create_db (dbname: string) json =
     match
       (try
@@ -132,9 +132,114 @@ let delete_table (p1 : string) (tablename : string) =
     if Sys.file_exists path then let () = ignore(remove_dir db) in Success db
     else Failure ("Database " ^ dbname ^ "does not exist.\n") *)
 
+(******************************************************************************)
+(********************************UNIT TESTS************************************)
+(******************************************************************************)
+
 TEST_MODULE "to_string" = struct
   let l1 = `List [`String "s1"; `String "s2"; `String "s3"]
   let l2 = `List []
   TEST "empty_list" = (to_string_list l2) = []
   TEST "full_list" = (to_string_list l1) = ["s1"; "s2"; "s3"]
+end
+
+TEST_MODULE "create_db" = struct
+  open Async.Std
+  (* improper fields in db file *)
+  let _ = Thread_safe.block_on_async (fun () -> remove_dir ())
+  let j = `Assoc [("db_name", `String "RJtest");
+          ("tab", `List [`String "t1"; `String "t2"])]
+  TEST = (create_db "RJtest" j) = Failure ("Incorrectly formatted json file " ^
+    "for database RJtest. It should have the following 2 fields: dbname, tables.\n")
+
+  (* missing fields in db file *)
+  let _ = Thread_safe.block_on_async (fun () -> remove_dir ())
+  let j = `Assoc [("dbName", `String "RJtest")]
+  TEST = create_db "RJtest" j = Failure ("Incorrectly formatted json file " ^
+    "for database RJtest. It should have the following 2 fields: dbname, tables.\n")
+
+  (* no table files *)
+  let _ = Thread_safe.block_on_async (fun () -> remove_dir ())
+  let j = `Assoc [("dbName", `String "RJtest");
+          ("tables", `List [`String "t1"; `String "t2"])]
+  TEST = create_db "RJtest" j = Failure ("Cannot find file t1.json in directory RJtest.\n")
+
+  (* t1 but no t2 file *)
+  let _ = Thread_safe.block_on_async (fun () -> create_dir ())
+  let j = `Assoc [("dbName", `String "RJtest");
+          ("tables", `List [`String "t1"; `String "t2"])]
+  let t1 = `Assoc [("tableName", `String "t1");
+   ("columnNames", `List [`String "Name"; `String "Age"; `String "Color"]);
+   ("columns",
+    `List
+      [`List [`String "Constance"; `String "Asta"; `String "Amanda"];
+       `List [`String "12"; `String "13"; `String "14"];
+       `List [`String "Blue"; `String "Green"; `String "Purple"]])]
+  let () = Yojson.Basic.to_file "RJtest/t1.json" t1
+  TEST = create_db "RJtest" j = Failure ("Cannot find file t2.json in directory RJtest.\n")
+
+  (* improper table file *)
+  let _ = Thread_safe.block_on_async (fun () -> create_dir ())
+  let j = `Assoc [("dbName", `String "RJtest");
+          ("tables", `List [`String "t1"; `String "t2"])]
+  let d = Writer.open_file "RJtest/t1.json" >>= fun t ->
+  Writer.write t "shksjdksjdkajk"; Writer.close t
+  let _ = Async.Std.Thread_safe.block_on_async (fun () -> d)
+  TEST = create_db "RJtest" j = Failure ("Cannot parse file t1.json in directory RJtest.\n")
+
+  (* success *)
+  let _ = Thread_safe.block_on_async (fun () -> create_dir ())
+  let j = `Assoc [("dbName", `String "RJtest");
+          ("tables", `List [`String "t1"; `String "t2"])]
+  let t1 = `Assoc [("tableName", `String "t1");
+   ("columnNames", `List [`String "Name"; `String "Age"; `String "Color"]);
+   ("columns",
+    `List
+      [`List [`String "Constance"; `String "Asta"; `String "Amanda"];
+       `List [`String "12"; `String "13"; `String "14"];
+       `List [`String "Blue"; `String "Green"; `String "Purple"]])]
+  let t2 = `Assoc [("tableName", `String "t3"); ("columnNames", `List [`String "hi"]);
+   ("columns",
+    `List
+      [`List [`String "cool"; `String "as"; `String "a"; `String "cucumber"]])]
+  let () = Yojson.Basic.to_file "RJtest/t1.json" t1
+  let () = Yojson.Basic.to_file "RJtest/t2.json" t2
+  TEST = test_success (create_db "RJtest" j)
+end
+
+TEST_MODULE "create_full_table" = struct
+  open Async.Std
+  (* improper field names for table json *)
+  let db = { name = ""; data = Tst.create (); updated = Ivar.create ()}
+
+  let t1 = `Assoc [("name", `String "t1");
+   ("colnames", `List [`String "Name"; `String "Age"; `String "Color"]);
+   ("columns",
+    `List
+      [`List [`String "Constance"; `String "Asta"; `String "Amanda"];
+       `List [`String "12"; `String "13"; `String "14"];
+       `List [`String "Blue"; `String "Green"; `String "Purple"]])]
+  TEST = create_full_table db "t1" t1 = Failure ("Incorrectly formatted json " ^
+    "file for table t1. It should have the following 3 fields: tableName, " ^
+    "columnNames, and columns.\n")
+
+  (* column and columnNames do not match up *)
+  let t1 = `Assoc [("tableName", `String "t1");
+   ("columnNames", `List [`String "Name"; `String "Age"; `String "Color"]);
+   ("columns",
+    `List
+      [`List [`String "Constance"; `String "Asta"; `String "Amanda"];
+       `List [`String "12"; `String "13"; `String "14"]])]
+  TEST = create_full_table db "t1" t1 = Failure ("Incorrectly formated json " ^
+    "file for table t1. columnNames and columns should be of the same length.\n")
+
+  (* success *)
+  let t1 = `Assoc [("tableName", `String "t1");
+   ("columnNames", `List [`String "Name"; `String "Age"; `String "Color"]);
+   ("columns",
+    `List
+      [`List [`String "Constance"; `String "Asta"; `String "Amanda"];
+       `List [`String "12"; `String "13"; `String "14"];
+       `List [`String "Blue"; `String "Green"; `String "Purple"]])]
+  TEST = test_success (create_full_table db "t1" t1)
 end
