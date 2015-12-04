@@ -5,6 +5,7 @@
 open Yojson.Basic
 open ReadJson
 open Async.Std
+open Types
 
 let test_async_eq (d : 'a Async.Std.Deferred.t) (v : 'a) : bool =
   Async.Std.Thread_safe.block_on_async (fun () -> d) = Core.Std.Result.Ok v
@@ -47,7 +48,11 @@ end
 
 TEST_MODULE "create_db" = struct
   (* no table file *)
-    (* Failure ("Cannot find table " ^ tablename ^ " in directory " ^ dbname ^ ".\n" *)
+  let _ = Async.Std.Thread_safe.block_on_async (fun () -> remove_dir ())
+  let j = `Assoc [("dbName", `String "RJtest");
+          ("tables", `List [`String "t1"; `String "t2"; `String "t3"])]
+  let () = Yojson.Basic.to_file "RJtest.json" j
+  TEST = create_db "RJtest" j = Failure ("Cannot find table t1 in directory RJtest.\n")
 
   (* improper db file *)
     (* Failure ("Cannot parse file ./" ^ dbname ^ "/" ^ dbname ^ ".json\n") *)
