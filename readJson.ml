@@ -3,7 +3,7 @@ open Types
 open InternalRep
 open Yojson.Basic.Util
 
-let rec traverse dirname m =
+(* let rec traverse dirname m =
   let open Async.Std in
   match m with
   | hd :: tl -> Sys.remove (dirname ^ "/" ^ hd) >>= fun () -> traverse dirname tl
@@ -13,7 +13,7 @@ let remove_dir (dirname : string ) =
   let open Async.Std in
   Sys.ls_dir dirname >>= fun l ->
   traverse dirname l >>= fun () ->
-  Unix.rmdir dirname
+  Unix.rmdir dirname *)
 
 let ok_to_create_db (dbname : string) =
   let open Async.Std in

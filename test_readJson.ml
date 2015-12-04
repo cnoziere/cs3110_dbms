@@ -1,5 +1,5 @@
 (******************************************************************************)
-(** Unit tests for readJson Implementation ************************************)
+(** Unit tests for ReadJson Implementation ************************************)
 (******************************************************************************)
 
 open Yojson.Basic
@@ -54,15 +54,14 @@ TEST_MODULE "create_db" = struct
   let _ = Async.Std.Thread_safe.block_on_async (fun () -> remove_dir ())
   let j = `Assoc [("db_name", `String "RJtest");
           ("tab", `List [`String "t1"; `String "t2"])]
-  (* TEST = (create_db "RJtest" j) = Failure ("Incorrectly formatted json file
-  for database RJtest. It should have the following 2 fields: dbname, tables.\n") *)
+  TEST = (create_db "RJtest" j) = Failure ("Incorrectly formatted json file " ^
+    "for database RJtest. It should have the following 2 fields: dbname, tables.\n")
 
   (* missing fields in db file *)
   let _ = Async.Std.Thread_safe.block_on_async (fun () -> remove_dir ())
   let j = `Assoc [("dbName", `String "RJtest")]
-  (* TEST = create_db "RJtest" j = Failure ("Incorrectly formatted json file
-    for database RJtest. It should have the following 2 fields:
-    dbname, tables.\n") *)
+  TEST = create_db "RJtest" j = Failure ("Incorrectly formatted json file " ^
+    "for database RJtest. It should have the following 2 fields: dbname, tables.\n")
 
   (* no table files *)
   let _ = Async.Std.Thread_safe.block_on_async (fun () -> remove_dir ())
@@ -124,9 +123,9 @@ TEST_MODULE "create_full_table" = struct
       [`List [`String "Constance"; `String "Asta"; `String "Amanda"];
        `List [`String "12"; `String "13"; `String "14"];
        `List [`String "Blue"; `String "Green"; `String "Purple"]])]
-  (* TEST = create_full_table db "t1" t1 = Failure ("Incorrectly formatted json
-    file for table t1. It should have the following 3 fields: tableName,
-    columnNames, and columns.\n") *)
+  TEST = create_full_table db "t1" t1 = Failure ("Incorrectly formatted json " ^
+    "file for table t1. It should have the following 3 fields: tableName, " ^
+    "columnNames, and columns.\n")
 
   (* column and columnNames do not match up *)
   let t1 = `Assoc [("tableName", `String "t1");
@@ -135,8 +134,8 @@ TEST_MODULE "create_full_table" = struct
     `List
       [`List [`String "Constance"; `String "Asta"; `String "Amanda"];
        `List [`String "12"; `String "13"; `String "14"]])]
-  (* TEST = create_full_table db "t1" t1 = Failure ("Incorrectly formated json
-    file for table t1. columnNames and columns should be of the same length.\n") *)
+  TEST = create_full_table db "t1" t1 = Failure ("Incorrectly formated json " ^
+    "file for table t1. columnNames and columns should be of the same length.\n")
 
   (* success *)
   let t1 = `Assoc [("tableName", `String "t1");
@@ -178,7 +177,6 @@ TEST_MODULE "load_db" = struct
   let () = Yojson.Basic.to_file "RJtest/t1.json" t1
   TEST = test_success (load_db "RJtest")
 end
-
 
 TEST_MODULE "drop_db" = struct
   (* db folder doesn't exists *)
