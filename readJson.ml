@@ -39,7 +39,8 @@ let create_full_table (db: database) (tablename : string) json =
       with
       | _ -> None)
     with
-    | None -> Failure ("Cannot parse the json file for table " ^ tablename ^ "\n")
+    | None -> Failure ("Incorrectly formatted json file for table " ^ tablename ^
+      ". It should have the following 3 fields: tableName, columnNames, and columns.\n")
     | Some (table_name, column_names, columns) ->
       if List.length columns <> List.length column_names
       then Failure ("Incorrectly formated json file for table " ^ tablename ^
@@ -48,9 +49,9 @@ let create_full_table (db: database) (tablename : string) json =
 
 let load_table (db : database) (tablename : string) =
     let dbname = db.name in
-    let path = "./" ^ dbname ^ "/" ^ tablename ^ ".json" in
-    if not (Sys.file_exists path) then Failure ("Cannot find table " ^ tablename
-        ^ " in directory " ^ dbname ^ ".\n")
+    let path = dbname ^ "/" ^ tablename ^ ".json" in
+    if not (Sys.file_exists path) then Failure ("Cannot find file " ^ tablename
+        ^ ".json in directory " ^ dbname ^ ".\n")
     else match
       (try
         Some (Yojson.Basic.from_file path)
@@ -58,8 +59,8 @@ let load_table (db : database) (tablename : string) =
        | _ -> None)
     with
     | Some table -> create_full_table db tablename table
-    | None -> Failure ("Cannot parse table " ^ tablename ^ " in directory "
-        ^ dbname ^ ".\n")
+    | None -> Failure ("Cannot parse file " ^ tablename ^ ".json in directory "
+      ^ dbname ^ ".\n")
 
 let rec load_tables tables db =
     match tables with
@@ -88,7 +89,8 @@ let create_db (dbname: string) json =
       with
       | _ -> None)
     with
-    | None -> Failure ("Cannot parse the following file: ./" ^ dbname ^ "/" ^ dbname ^ ".json\n")
+    | None -> Failure ("Incorrectly formatted json file for database " ^ dbname ^
+      ". It should have the following 2 fields: dbname, tables.\n")
     | Some (dbname, tables) -> let x1 = create_database dbname in
                                let x2 = no_failure (load_tables tables) x1 in
                                let f = (fun x -> ignore(UpdateJson.watch_for_update x);
@@ -96,7 +98,7 @@ let create_db (dbname: string) json =
 
 let load_db (dbname : string) =
     let path = "./" ^ dbname ^ "/" ^ dbname ^ ".json" in
-    if not (Sys.file_exists path) then Failure ("Cannot find database " ^ dbname
+    if not (Sys.file_exists path) then Failure ("Cannot find folder " ^ dbname
         ^ " in current directory.\n")
     else match
       (try
@@ -104,7 +106,8 @@ let load_db (dbname : string) =
       with _ -> None)
     with
     | Some json -> create_db dbname json
-    | None -> Failure ("Cannot parse the following file: " ^ path ^ "\n")
+    | None -> Failure ("Cannot parse file " ^ dbname ^ ".json in directory "
+      ^ dbname ^ ".\n")
 
 let delete_table (p1 : string) (tablename : string) =
   let path = p1 ^ "/" ^ tablename ^ ".json" in
