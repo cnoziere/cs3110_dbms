@@ -59,8 +59,10 @@ let set_name new_name db =
  * Return result of Success or Failure
  *)
 let create_table (db: database) (table_name: string) (col_names: string list) =
-    if col_names = [] then Failure ("No column names are provided to " ^
-        "initialize table") else
+    if table_name = db.name then
+        Failure "Error: Table name cannot be the same as database name"
+    else if col_names = [] then Failure ("Error: No column names are " ^
+        "provided to initialize table") else
     let (new_table: table) = Tst.create () in
     let rec add_cols table col_names =
         match col_names with
@@ -68,14 +70,14 @@ let create_table (db: database) (table_name: string) (col_names: string list) =
             let (is_duplicate, new_data) =
                 Tst.insert table_name table db.data in
             if is_duplicate then
-                Failure "Table name already exists in database"
+                Failure "Error: Table name already exists in database"
             else
                 Success (update_data db new_data table_name)
         | h::t ->
             let (new_column: column) = {data = Bst.create (); last_index = 0} in
             let (is_duplicate, new_table) = Tst.insert h new_column table in
             if is_duplicate then
-                Failure "Duplicate column name used to initialize table"
+                Failure "Error: Duplicate column name used to initialize table"
             else
                 add_cols new_table t in
     add_cols new_table col_names
@@ -99,7 +101,7 @@ let drop_table (db: database) (table_to_drop: string): result =
     if success then
         Success (update_data db new_data table_to_drop)
     else
-        Failure (table_to_drop ^ " is not a table in the database")
+        Failure ("Error: " ^ table_to_drop ^ " is not a table in the database")
 
 
 (* Returns true if all items in sublst are a member of assoc_lst *)
@@ -113,6 +115,11 @@ let rec all_mem (sublst: 'a list) (assoc_lst: ('a * 'b) list): bool =
         with
         | Not_found -> false
 
+(* Returns true if a duplicate exists in the list *)
+let rec duplicate = function
+    | [] -> false
+    | h::t -> List.mem h t && duplicate t
+
 (**
  * Add new row to a table, given the database, table name, a list of the
  * column names, and a list of the respective values to populate the row
@@ -123,14 +130,16 @@ let rec all_mem (sublst: 'a list) (assoc_lst: ('a * 'b) list): bool =
 let add_row (db: database) (table_name: string) (cols_to_change: string list)
     (vals: value list): result =
     if List.length cols_to_change <> List.length vals then
-        Failure "Number of columns and values to be added do not match"
+        Failure "Error: Number of columns and values to be added do not match"
+    else if duplicate cols_to_change then
+        Failure "Error: Duplicate column provided"
     else match Tst.get table_name db.data with
-    | None -> Failure (table_name ^ " is not a table in the database")
+    | None -> Failure ("Error: " ^ table_name ^ " is not a table in the database")
     | Some table_to_change ->
         (* Cols is the associative list of col names and columns *)
         let cols = Tst.list_tst table_to_change in
         if cols = [] then
-            Failure "Table has no columns"
+            Failure "Error: Table has no columns"
         else if all_mem cols_to_change cols then
             (* Add the correct value to each column *)
             let rec add_cols table cols =
@@ -140,7 +149,7 @@ let add_row (db: database) (table_name: string) (cols_to_change: string list)
                 if updated then
                     Success (update_data db new_data table_name)
                 else
-                    Failure (table_name ^ " is not a table in the database")
+                    Failure ("Error: " ^ table_name ^ " is not a table in the database")
             | (name, curr_col)::t ->
                 (* [find_cols]: find the value to be inserted into curr_col *)
                 let rec find_val names vs =
@@ -153,7 +162,7 @@ let add_row (db: database) (table_name: string) (cols_to_change: string list)
                     Bst.insert curr_col.last_index
                     (find_val cols_to_change vals) curr_col.data in
                 if updated then
-                    Failure "Row key already exists"
+                    Failure "Error: Row key already exists"
                 else
                     let (updated, new_table) =
                         Tst.insert name {last_index = curr_col.last_index + 1;
@@ -161,10 +170,11 @@ let add_row (db: database) (table_name: string) (cols_to_change: string list)
                     if updated then
                         add_cols new_table t
                     else
-                        Failure (name ^ " is not a column in the table " ^ table_name) in
+                        Failure ("Error: " ^ name ^ " is not a column "
+                        ^ " in the table " ^ table_name) in
             add_cols table_to_change cols
         else
-            Failure ("Provided columns do not exist in the table " ^ table_name)
+            Failure ("Error: Provided columns do not exist in the table " ^ table_name)
 
 
 (**
@@ -174,12 +184,12 @@ let add_row (db: database) (table_name: string) (cols_to_change: string list)
  *)
 let delete_row (db: database) (table_name: string) (key_to_delete: key) =
     match Tst.get table_name db.data with
-    | None -> Failure (table_name ^ " is not a table in the database")
+    | None -> Failure ("Error: " ^ table_name ^ " is not a table in the database")
     | Some table_to_change ->
         (* Cols is the associative list of col names and columns *)
         let cols = Tst.list_tst table_to_change in
         if cols = [] then
-            Failure "Table has no columns"
+            Failure "Error: Table has no columns"
         else
             (* [remove_key] removes the key_to_delete from all cols *)
             let rec remove_key table cols =
@@ -190,7 +200,7 @@ let delete_row (db: database) (table_name: string) (key_to_delete: key) =
                     if updated then
                         Success (update_data db new_data table_name)
                     else
-                        Failure (table_name ^ " is not a table in the database")
+                        Failure ("Error: " ^ table_name ^ " is not a table in the database")
                 | (name, curr_col)::t ->
                     let (x: column) = curr_col in
                     let (removed, new_col) =
@@ -202,8 +212,8 @@ let delete_row (db: database) (table_name: string) (key_to_delete: key) =
                         if updated then
                             remove_key new_table t
                         else
-                            Failure (name ^ " is not a column in the table "
-                            ^ table_name)
+                            Failure ("Error: " ^ name ^ " is not a column "
+                            ^ " in the table " ^ table_name)
                     else
                         Failure "Key does not exist" in
             remove_key table_to_change cols
@@ -216,10 +226,10 @@ let delete_row (db: database) (table_name: string) (key_to_delete: key) =
 let update_value (db: database) (table_name: string) (column_name: string)
     (key_to_change: key) (value_to_add: value) : result =
     match Tst.get table_name db.data with
-    | None -> Failure (table_name ^ " is not a table in the database")
+    | None -> Failure ("Error: " ^ table_name ^ " is not a table in the database")
     | Some table_to_change ->
         match Tst.get column_name table_to_change with
-        | None -> Failure (column_name
+        | None -> Failure ("Error: " ^ column_name
             ^ " is not a column in the table " ^ table_name)
         | Some selected_column ->
             let (updated, new_col) =
@@ -234,24 +244,24 @@ let update_value (db: database) (table_name: string) (column_name: string)
                     if updated then
                         Success (update_data db new_data table_name)
                     else
-                        Failure (table_name ^ " is not a table in the database")
+                        Failure ("Error: " ^ table_name ^ " is not a table in the database")
                 else
-                    Failure (column_name
+                    Failure ("Error: " ^ column_name
                     ^ " is not a column in the table " ^ table_name)
             else
-                Failure "Key does not exist"
+                Failure "Error: Key does not exist"
 
 (**
  * Given the table name, return result of ColName, a string list of column names
  *)
 let get_column_names (db: database) (table_name: string): result =
     match Tst.get table_name db.data with
-    | None -> Failure (table_name ^ " is not a table in the database")
+    | None -> Failure ("Error: " ^ table_name ^ " is not a table in the database")
     | Some selected_table ->
         (* Cols is the associative list of col names and columns *)
         let cols = Tst.list_tst selected_table in
         if cols = [] then
-            Failure ("No columns exist in table" ^ table_name)
+            Failure ("Error: No columns exist in table" ^ table_name)
         else
             let rec get_names = function
             | [] -> []
@@ -268,11 +278,11 @@ let get_column_names (db: database) (table_name: string): result =
 let get_column_vals (db: database) (table_name: string) (column_name: string)
     (to_add: value -> bool): result =
     match Tst.get table_name db.data with
-    | None -> Failure (table_name ^ " is not a table in the database")
+    | None -> Failure ("Error: " ^ table_name ^ " is not a table in the database")
     | Some selected_table ->
         (* Select the correct column *)
         match Tst.get column_name selected_table with
-        | None -> Failure (column_name
+        | None -> Failure ("Error: " ^ column_name
             ^ " is not a column in the table " ^ table_name)
         | Some selected_col ->
             (* Extract list of valid values from list of keys and values *)
@@ -292,7 +302,7 @@ exception Empty_table
 let get_row (db: database) (table_name: string) (column_name: string)
     (to_add: value -> bool): result =
     match Tst.get table_name db.data with
-    | None -> Failure (table_name ^ " is not a table in the database")
+    | None -> Failure ("Error: " ^ table_name ^ " is not a table in the database")
     | Some selected_table ->
         try
             let column_name =
@@ -303,7 +313,7 @@ let get_row (db: database) (table_name: string) (column_name: string)
                 else
                     column_name in
             match Tst.get column_name selected_table with
-            | None -> Failure (column_name
+            | None -> Failure ("Error: " ^ column_name
                 ^ " is not a column in the table " ^ table_name)
             | Some selected_col ->
                 (* extract list of valid keys from list of keys and values *)
@@ -312,7 +322,7 @@ let get_row (db: database) (table_name: string) (column_name: string)
                 | [] -> [] in
                 Keys (check_keys (Bst.list_bst selected_col.data))
         with
-        | Empty_table -> Failure (table_name ^ " has no columns")
+        | Empty_table -> Failure ("Error: " ^ table_name ^ " has no columns")
 
 
 exception Key_not_found of key
@@ -324,10 +334,10 @@ exception Key_not_found of key
 let get_values (db: database) (table_name: string)
     (column_name: string) (keys: key list): result =
     match Tst.get table_name db.data with
-    | None -> Failure (table_name ^ " is not a table in the database")
+    | None -> Failure ("Error: " ^ table_name ^ " is not a table in the database")
     | Some selected_table ->
         match Tst.get column_name selected_table with
-        | None -> Failure (column_name
+        | None -> Failure ("Error: " ^ column_name
             ^ " is not a column in the table " ^ table_name)
         | Some selected_col ->
             (* extract list of values from list of keys *)
@@ -340,7 +350,7 @@ let get_values (db: database) (table_name: string)
             try
                 Column (get_vals keys)
             with
-                | Key_not_found k -> (Failure ("The key " ^ string_of_int k
+                | Key_not_found k -> (Failure ("Error: The key " ^ string_of_int k
                     ^ " does not exist in the table " ^ table_name))
 
 
@@ -352,7 +362,7 @@ let get_values (db: database) (table_name: string)
 let create_whole_table (db: database) (table_name: string)
     (col_names: string list) (values: value list list): result =
     if col_names = [] then
-        Failure "No column names are provided to initialize table"
+        Failure "Error: No column names are provided to initialize table"
     else
     (* Add a list of list of values into list of columns *)
     let rec add_cols added_table cols vals =
@@ -361,7 +371,7 @@ let create_whole_table (db: database) (table_name: string)
             let (is_duplicate, new_data) =
                 Tst.insert table_name added_table db.data in
             if is_duplicate then
-                Failure "Table name already exists in database"
+                Failure "Error: Table name already exists in database"
             else
                 Success (update_data db new_data table_name)
         | col_name::next_names, val_lst::next_vals ->
@@ -373,7 +383,7 @@ let create_whole_table (db: database) (table_name: string)
                     let (is_duplicate, new_table) =
                         Tst.insert col_name col added_table in
                     if is_duplicate then
-                        Failure "Duplicate column name used to initialize table"
+                        Failure "Error: Duplicate column name used to initialize table"
                     else
                         add_cols new_table next_names next_vals
                 | v::vs ->
@@ -381,9 +391,9 @@ let create_whole_table (db: database) (table_name: string)
                     let (is_duplicate, new_col) =
                         Bst.insert col.last_index v col.data in
                     if is_duplicate then
-                        Failure "Duplicate key used to initialize table"
+                        Failure "Error: Duplicate key used to initialize table"
                     else
                         add_vals {data = new_col; last_index = col.last_index + 1} vs in
             add_vals {data = Bst.create (); last_index = 0} val_lst
-        | _,_ -> Failure "List of columns and values do not match" in
+        | _,_ -> Failure "Error: List of columns and values do not match" in
     add_cols (Tst.create ()) col_names values
