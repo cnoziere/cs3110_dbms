@@ -1,1 +1,3 @@
-{ "dbName": "minimalDB", "tables": [ "t3" ] }
+{ "dbName": "minimalDB",
+  "tables": ["t1", "t2", "t3"]
+}
