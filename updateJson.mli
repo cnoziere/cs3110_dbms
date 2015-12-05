@@ -9,6 +9,3 @@ open Types
  * 3) if a table has been removed, it writes the updated database and removes
  * the table from file *)
 val watch_for_update: database -> unit Deferred.t
-
-(* used to test watch_for_update *)
-val watch_for_update_testing: database -> unit Deferred.t
