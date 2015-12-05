@@ -1,4 +1,3 @@
-open Yojson.Basic
 open Async.Std
 open Types
 

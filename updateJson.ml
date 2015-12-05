@@ -32,10 +32,10 @@ let table_to_json (db : database) (tablename : string) =
  * previously existed *)
 let write_to_file (j : json) (path : string) =
   let data = pretty_to_string j in
-  Writer.open_file "tmp.json" >>=
-  fun t -> Writer.write t data; Writer.close t >>=
-  fun _ -> Writer.open_file path >>=
-  fun t' -> Writer.write t' data; Writer.close t'
+  Writer.open_file "tmp.json" >>= fun t ->
+    Writer.write t data; Writer.close t >>= fun _ ->
+      Writer.open_file path >>= fun t' ->
+        Writer.write t' data; Writer.close t'
 
 (* [table_to_file db t] writes the JSON value that represents
  * table t of database db to file.
@@ -70,18 +70,17 @@ let database_to_file (db : database) =
  * and the appropriate portion of the database is written to file *)
 let rec watch_for_update (db : database) =
   let open Async.Std in
-  updated db >>=
-  (fun (db', tablename) ->
+  updated db >>= fun (db', tablename) ->
     let check = fun x -> List.mem tablename (get_table_names x) in
     let path = "./" ^ db.name ^ "/" ^ tablename ^ ".json" in
     let d1 = match (check db, check db') with
-    | (true, true)   -> table_to_file db' tablename          (* table modified *)
-    | (true, false)  -> Sys.remove path >>=
-                        fun () -> database_to_file db'       (* table deleted *)
-    | (false, true)  -> table_to_file db' tablename >>=
-                        fun _ -> database_to_file db'        (* table added *)
-    | (false, false) -> database_to_file db' in
-    d1 >>= fun () -> watch_for_update db')
+             | (true, true)   -> table_to_file db' tablename (* table modified *)
+             | (true, false)  -> Sys.remove path >>= fun () ->
+                                   database_to_file db'      (* table deleted *)
+             | (false, true)  -> table_to_file db' tablename >>= fun _ ->
+                                   database_to_file db'      (* table added *)
+             | (false, false) -> database_to_file db' in
+    d1 >>= fun () -> watch_for_update db'
 
 (******************************************************************************)
 (********************************UNIT TESTS************************************)
@@ -150,10 +149,15 @@ TEST_MODULE "table_to_file" = struct
   let () = Yojson.Basic.to_file "RJtest/RJtest.json" j
   let () = Yojson.Basic.to_file "RJtest/t1.json" t1
   TEST = match ReadJson.load_db "RJtest" with
-         | Success db -> let _ = Thread_safe.block_on_async (fun () -> create_dir ()) in
-                         let b1 = test_async_eq (Sys.file_exists_exn "RJtest/t1.json") false in
-                         let _ = Thread_safe.block_on_async (fun () -> table_to_file db "t1") in
-                         let b2 = test_async_eq (Sys.file_exists_exn "RJtest/t1.json") true in
+         | Success db -> let _ = Thread_safe.block_on_async
+                                 (fun () -> create_dir ()) in
+                         let b1 = test_async_eq
+                                  (Sys.file_exists_exn "RJtest/t1.json")
+                                  false in
+                         let _ = Thread_safe.block_on_async
+                                 (fun () -> table_to_file db "t1") in
+                         let b2 = test_async_eq
+                                  (Sys.file_exists_exn "RJtest/t1.json") true in
                          let t' = Yojson.Basic.from_file "RJtest/t1.json" in
                          let b3 = (t' = t1 || t' = t2 || t' = t3 || t' = t4) in
                          b1 && b2 && b3
@@ -165,11 +169,18 @@ TEST_MODULE "database_to_file" = struct
   let () = Yojson.Basic.to_file "RJtest/RJtest.json" j
   let () = Yojson.Basic.to_file "RJtest/t1.json" t1
   TEST = match ReadJson.load_db "RJtest" with
-         | Success db -> let _ = Thread_safe.block_on_async (fun () -> create_dir ()) in
-                         let _ = Thread_safe.block_on_async (fun () -> Sys.remove "RJtest/RJtest.json") in
-                         let b1 = test_async_eq (Sys.file_exists_exn "RJtest/RJtest.json") false in
-                         let _ = Thread_safe.block_on_async (fun () -> database_to_file db) in
-                         let b2 = test_async_eq (Sys.file_exists_exn "RJtest/RJtest.json") true in
+         | Success db -> let _ = Thread_safe.block_on_async
+                                 (fun () -> create_dir ()) in
+                         let _ = Thread_safe.block_on_async
+                                 (fun () -> Sys.remove "RJtest/RJtest.json") in
+                         let b1 = test_async_eq
+                                  (Sys.file_exists_exn "RJtest/RJtest.json")
+                                  false in
+                         let _ = Thread_safe.block_on_async
+                                 (fun () -> database_to_file db) in
+                         let b2 = test_async_eq
+                                  (Sys.file_exists_exn "RJtest/RJtest.json")
+                                  true in
                          let t' = Yojson.Basic.from_file "RJtest/RJtest.json" in
                          let b3 = t' = j in
                          b1 && b2 && b3
