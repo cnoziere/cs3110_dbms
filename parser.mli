@@ -32,3 +32,5 @@ val delete_from : database -> string list -> result
 val update : database -> string list -> result
 val select : database -> string list -> result
 val print : database -> string list -> result
+
+val repl: unit -> unit Deferred.t

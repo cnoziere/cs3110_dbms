@@ -88,42 +88,34 @@ let rec watch_for_update (db : database) =
 
 let j = `Assoc [("dbName", `String "RJtest");
         ("tables", `List [`String "t1"])]
+
 let t1 = `Assoc [("tableName", `String "t1");
    ("columnNames", `List [`String "Name"; `String "Age"]);
    ("columns",
     `List
       [`List [`String "Asta"; `String "Amanda"];
        `List [`String "13"; `String "14"]])]
+
 let t2 = `Assoc [("tableName", `String "t1");
    ("columnNames", `List [`String "Name"; `String "Age"]);
    ("columns",
     `List
       [`List [`String "Amanda"; `String "Asta"];
        `List [`String "14"; `String "13"]])]
+
 let t3 = `Assoc [("tableName", `String "t1");
    ("columnNames", `List [`String "Age"; `String "Name"]);
    ("columns",
     `List
       [`List [`String "14"; `String "13"];
       `List [`String "Amanda"; `String "Asta"]])]
+
 let t4 = `Assoc [("tableName", `String "t1");
    ("columnNames", `List [`String "Age"; `String "Name"]);
    ("columns",
     `List
       [`List [`String "13"; `String "14"];
       `List [`String "Asta"; `String "Amanda"]])]
-
-let t1' = `Assoc [("tableName", `String "t1");
-   ("columnNames", `List [`String "Name"]);
-   ("columns",
-    `List
-      [`List [`String "Asta"; `String "Amanda"]])]
-
-let r = `Assoc [("tableName", `String "t1");
-   ("columnNames", `List [`String "Name"]);
-   ("columns",
-    `List
-      [`List [`String "Asta"; `String "Amanda"; `String "Constance"]])]
 
 TEST_MODULE "table_to_json" = struct
   let _ = Thread_safe.block_on_async (fun () -> create_dir ())
