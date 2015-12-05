@@ -86,7 +86,10 @@ let help params = match params with
 
 let load params = match params with
   | [] -> PFailure("Error LOAD: no filename.")
-  | h::[] -> ReadJson.load_db h
+  | h::[] -> let res = ReadJson.load_db h in
+             (match res with
+             | Success db -> ignore(UpdateJson.watch_for_update db)
+             | _ -> ()); res
   | _ -> PFailure("Error LOAD: too many parameters.")
 
 let create_database params = match params with
