@@ -86,6 +86,9 @@ shares the database name.
 
 
 CREATE DATABASE Characters
+    Note: if you're revisiting this example, Characters may already exist.
+    Either [LOAD Characters], delete the directory [Characters] to try
+    again, or use a different database name.
 
 CREATE TABLE SesameSt (Name, Color, Team)
 INSERT INTO SesameSt (Name, Color, Team) VALUES (Elmo, red, a)
@@ -98,7 +101,7 @@ UPDATE SesameSt SET (Team=a) WHERE (Color=green)
 SELECT (Name, Color) FROM SesameSt WHERE (Team=a)
 
 CREATE TABLE DoctorWho Name Species Planet
-INSERT INTO DoctorWho (Name, Species, Planet) VALUES (Twelve, TimeLord, Galiffrey)
+INSERT INTO DoctorWho (Name, Species, Planet) VALUES (Twelve, TimeLord, Gallifrey)
 INSERT INTO DoctorWho (Name, Species) VALUES (Rose, human)
 INSERT INTO DoctorWho (Name, Species, Planet) VALUES (Strax, Sontaran, Sontar)
 INSERT INTO DoctorWho (Name, Species, Planet) VALUES (Vastra, Silurian, Earth)
@@ -106,19 +109,18 @@ PRINT DoctorWho
 INSERT INTO DoctorWho (Name, Species, Planet) VALUES (Jack, immortal, Earth)
 INSERT INTO DoctorWho (Species, Planet) VALUES (Dalek, Skaro)
 INSERT INTO DoctorWho (Species) VALUES (Silence)
+PRINT DoctorWho
 UPDATE DoctorWho SET (Planet=Earth) WHERE (Species=human)
 SELECT * FROM DoctorWho
 
 DELETE FROM SesameSt WHERE (Team=c)
 DELETE * FROM DoctorWho
-INSERT INTO DoctorWho (Name, Species, Planet) VALUES (Twelve, TimeLord, Galiffrey)
+INSERT INTO DoctorWho (Name, Species, Planet) VALUES (Twelve, TimeLord, Gallifrey)
 DROP TABLE SesameSt
 
 LOAD minimalDB
+    Note that [LOAD minimalDB] switches the database to the database saved
+    in minimalDB.json.
 PRINT t1
 PRINT t2
 PRINT t3
-
-
-Note that [LOAD minimalDB] switches the database to the database saved in
-minimalDB.json.
