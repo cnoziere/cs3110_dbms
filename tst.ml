@@ -72,15 +72,8 @@ let rec remove (key: string) (t: 'a tree): (bool * 'a tree) =
         (flag, Node (c, None, t1, t2, t3))
     | Node (c, v, t1, t2, t3) when key.[0] = c ->
         let new_key = String.sub key 1 (String.length key - 1) in
-        if is_char t1 new_key then
-            let (flag, new_t) = remove new_key t1 in
-            (flag, Node (c, v, new_t, t2, t3))
-        else if is_char t2 new_key then
-            let (flag, new_t) = remove new_key t2 in
-            (flag, Node (c, v, t1, new_t, t3))
-        else
-            let (flag, new_t) = remove new_key t3 in
-            (flag, Node (c, v, t1, t2, new_t))
+        let (flag, new_t) = remove new_key t2 in
+        (flag, Node (c, v, t1, new_t, t3))
     | Node (c, v, t1, t2, t3) ->
         if (key.[0] < c) then
             let (flag, new_t) = remove key t1 in
