@@ -464,6 +464,6 @@ let rec repl () =
                  | None -> repl ()
                  else let () = ignore(Async.Std.exit 0) in return ()
 
-(* let _ = printf "\n%s" "Starting DBMS. Type HELP to see a list of commands."
+let _ = printf "\n%s" "Starting DBMS. Type HELP to see a list of commands."
 let _ = repl ()
-let _ = Scheduler.go () *)
+let _ = Scheduler.go ()

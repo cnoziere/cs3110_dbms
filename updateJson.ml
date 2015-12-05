@@ -82,6 +82,20 @@ let rec watch_for_update (db : database) =
              | (false, false) -> database_to_file db' in
     d1 >>= fun () -> watch_for_update db'
 
+let rec watch_for_update_testing (db : database) =
+  let open Async.Std in
+  updated db >>= fun (db', tablename) ->
+    let check = fun x -> List.mem tablename (get_table_names x) in
+    let path = "./" ^ db.name ^ "/" ^ tablename ^ ".json" in
+    let d1 = match (check db, check db') with
+             | (true, true)   -> table_to_file db' tablename (* table modified *)
+             | (true, false)  -> Sys.remove path >>= fun () ->
+                                   database_to_file db'      (* table deleted *)
+             | (false, true)  -> table_to_file db' tablename >>= fun _ ->
+                                   database_to_file db'      (* table added *)
+             | (false, false) -> database_to_file db' in
+    let _ = Thread_safe.block_on_async (fun () -> d1) in return ()
+
 (******************************************************************************)
 (********************************UNIT TESTS************************************)
 (******************************************************************************)
