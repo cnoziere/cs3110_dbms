@@ -4,7 +4,6 @@
 
 (* See readJson.ml for tests of functions not included in the ReadJson
 signature *)
-
 open Yojson.Basic
 open Testing
 open ReadJson
@@ -57,13 +56,4 @@ TEST_MODULE "load_db" = struct
   let () = Yojson.Basic.to_file "RJtest/RJtest.json" j
   let () = Yojson.Basic.to_file "RJtest/t1.json" t1
   TEST = test_success (load_db "RJtest")
-end
-
-TEST_MODULE "drop_db" = struct
-  (* db folder doesn't exists *)
-    (* Failure ("Database " ^ db.name ^ "does not exist.\n") *)
-
-  (* db folder and main file exist *)
-    (* check that db folder and all internal files deleted *)
-    (* success *)
 end
