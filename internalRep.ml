@@ -118,7 +118,7 @@ let rec all_mem (sublst: 'a list) (assoc_lst: ('a * 'b) list): bool =
 (* Returns true if a duplicate exists in the list *)
 let rec duplicate = function
     | [] -> false
-    | h::t -> List.mem h t && duplicate t
+    | h::t -> List.mem h t || duplicate t
 
 (**
  * Add new row to a table, given the database, table name, a list of the
