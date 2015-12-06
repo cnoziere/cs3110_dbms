@@ -126,15 +126,6 @@ let delete_table (p1 : string) (tablename : string) =
   let path = p1 ^ "/" ^ tablename ^ ".json" in
   if Sys.file_exists path then Sys.remove path else ()
 
-let drop_db (dbname : string) =
-  let open Async.Std in
-  let path = "./" ^ dbname ^ "/" ^ dbname ^ ".json" in
-  let db = {name = ""; data = Tst.create (); updated = Ivar.create ()} in
-  Sys.file_exists_exn path >>= fun b ->
-    if b then remove dbname >>= fun () ->
-      return (Success db)
-    else return (Failure ("Database " ^ dbname ^ "does not exist.\n"))
-
 (******************************************************************************)
 (********************************UNIT TESTS************************************)
 (******************************************************************************)

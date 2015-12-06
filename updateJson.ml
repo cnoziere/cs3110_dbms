@@ -65,10 +65,7 @@ let database_to_file (db : database) =
   let path  = "./" ^ dbname ^ "/" ^ dbname ^ ".json" in
   write_to_file json_db path
 
-(* Implements the observer pattern covered in Rec 18
- * Whenever the database is updated, the deferred becomes determined
- * and the appropriate portion of the database is written to file *)
-let rec watch_for_update (db : database) =
+let rec watch_for_update_helper (db : database) =
   let open Async.Std in
   updated db >>= fun (db', tablename) ->
     let check = fun x -> List.mem tablename (get_table_names x) in
@@ -80,7 +77,15 @@ let rec watch_for_update (db : database) =
              | (false, true)  -> table_to_file db' tablename >>= fun _ ->
                                    database_to_file db'      (* table added *)
              | (false, false) -> database_to_file db' in
-    d1 >>= fun () -> watch_for_update db'
+    return (d1, db')
+
+(* Implements the observer pattern covered in Rec 18
+ * Whenever the database is updated, the deferred becomes determined
+ * and the appropriate portion of the database is written to file *)
+let rec watch_for_update (db : database) =
+  let open Async.Std in
+  watch_for_update_helper db >>= fun (d1, db') ->
+  d1 >>= fun () -> watch_for_update db'
 
 (******************************************************************************)
 (********************************UNIT TESTS************************************)
@@ -177,4 +182,62 @@ TEST_MODULE "database_to_file" = struct
                          let b3 = t' = j in
                          b1 && b2 && b3
          | _ -> false
+end
+
+let k = `Assoc [("dbName", `String "RJtest");
+        ("tables", `List [`String "t1"])]
+
+let k1 = `Assoc [("tableName", `String "t1");
+   ("columnNames", `List [`String "Name"]);
+   ("columns",
+    `List
+      [`List [`String "Asta"; `String "Amanda"]])]
+
+let k1' = `Assoc [("tableName", `String "t1"); ("columnNames", `List [`String "Name"]);
+   ("columns",
+    `List [`List [`String "Asta"; `String "Amanda"; `String "Constance"]])]
+
+let v1 = `Assoc [("tableName", `String "t2");
+   ("columnNames", `List [`String "Name"; `String "Age"]);
+   ("columns", `List [`List []; `List []])]
+
+let v2 = `Assoc [("tableName", `String "t2");
+   ("columnNames", `List [`String "Age"; `String "Name"]);
+   ("columns", `List [`List []; `List []])]
+
+let k' = `Assoc [("dbName", `String "RJtest");
+        ("tables", `List [`String "t1"; `String "t2"])]
+
+TEST_MODULE "watch_for_update" = struct
+  (* table modified *)
+  let _ = Thread_safe.block_on_async (fun () -> create_dir ())
+  let () = Yojson.Basic.to_file "RJtest/RJtest.json" k
+  let () = Yojson.Basic.to_file "RJtest/t1.json" k1
+  let b4 = match ReadJson.load_db "RJtest" with
+         | Success db -> let res = InternalRep.add_row db "t1" ["Name"] ["Constance"] in
+                         watch_for_update_helper db >>= fun (d1, _) -> d1 >>= fun _ ->
+                         (match res with
+                          | Success db' -> let b1 = db <> db' in
+                                           let b2 = (Yojson.Basic.from_file "RJtest/t1.json") = k1' in
+                                           return (b1 && b2)
+                          | _ -> return false)
+        | _ -> return false
+  TEST = test_async_eq b4 true
+
+ (* table added *)
+  let _ = Thread_safe.block_on_async (fun () -> create_dir ())
+  let () = Yojson.Basic.to_file "RJtest/RJtest.json" k
+  let () = Yojson.Basic.to_file "RJtest/t1.json" k1
+  let b4 = match ReadJson.load_db "RJtest" with
+         | Success db -> let res = Operation.create_table db "t2" ["Name"; "Age"] in
+                         watch_for_update_helper db >>= fun (d1, _) -> d1 >>= fun _ ->
+                         (match res with
+                          | Success db' -> let b1 = db <> db' in
+                                           let b2 = (Yojson.Basic.from_file "RJtest/t2.json") = v1 in
+                                           let b3 = (Yojson.Basic.from_file "RJtest/t2.json") = v2 in
+                                           let b4 = (Yojson.Basic.from_file "RJtest/RJtest.json") = k' in
+                                           return (b1 && (b2 || b3) && b4)
+                          | _ -> return false)
+        | _ -> return false
+  TEST = test_async_eq b4 true
 end

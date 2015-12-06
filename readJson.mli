@@ -12,9 +12,3 @@ val load_db: string -> result
 (* [ok_to_create_database d] returns true if no database with
  * name d currently exists on disk and false otherwise *)
 val ok_to_create_db: string -> bool Deferred.t
-
-(* [drop_db d] deletes all files pertaining to database
- * db from disk.
- * Returns Success if the operation was successfully completed
- * Otherwise returns Failure some_error_message *)
-val drop_db : string -> result Deferred.t
